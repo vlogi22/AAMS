@@ -1,0 +1,6 @@
+numpy
+ma-gym
+pygame
+matplotlib
+scipy
+torch
