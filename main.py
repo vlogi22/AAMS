@@ -115,13 +115,13 @@ if __name__ == '__main__':
   parser.add_argument("--image", type=str, default="image")
   parser.add_argument("--agents", type=int, default=1)
   parser.add_argument("--foods", type=int, default=20)
-  parser.add_argument("--save", type=str, default="model.pth")
-  parser.add_argument("--load", type=str, default="model.pth")
+  parser.add_argument("--save", type=bool, default=False)
+  parser.add_argument("--load", type=bool, default=False)
   parser.add_argument("--train", type=bool, default=False)
   opt = parser.parse_args()
 
   DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-  print(f"Using {DEVICE}")
+  print(f"Using {DEVICE} |", torch.cuda.get_device_name(0))
 
   # 1 - Setup environment
   env = Game(
@@ -132,11 +132,12 @@ if __name__ == '__main__':
 
   # 2 - Setup agent
   agents = [GameAgent(agentId=id, device = DEVICE) for id in range(0, 1)]
-
+  
   # 3 - Setup agent
-  for agent in agents:
-    agent.load(opt.load)
-
+  if opt.load:
+    for agent in agents:
+      agent.load()
+  
   # 4 - Evaluate agent
   results = {}
   if opt.train:
@@ -152,7 +153,7 @@ if __name__ == '__main__':
 
   # 6 - Save model
   for id, agent in enumerate(agents):
-    agent.save(opt.save)
+    agent.save()
 
   
   
