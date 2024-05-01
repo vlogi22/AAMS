@@ -45,7 +45,7 @@ class MLP(nn.Module):
 
       nn.Linear(32, outputLayer),
 
-      nn.LogSoftmax(dim=0)
+      nn.LogSoftmax(dim=-1)
     )
 
   def forward(self, x: torch.Tensor):
