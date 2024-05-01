@@ -6,10 +6,10 @@ from collections import deque
 import random
 import os
 
-MIN_REPLAY_MEMORY_SIZE = 256 # 2^8
+MIN_REPLAY_MEMORY_SIZE = 256
 REPLAY_MEMORY_SIZE = 16_384 # 2^14
-MINIBATCH_SIZE = 32 # 2^5
-UPDATE_TARGET_EVERY = 32 # 2^5
+MINIBATCH_SIZE = 64
+UPDATE_TARGET_EVERY = 8
 DISCOUNT = 0.95
 
 class MLP(nn.Module):
@@ -45,7 +45,7 @@ class MLP(nn.Module):
 
       nn.Linear(32, outputLayer),
 
-      nn.LogSoftmax(dim=-1)
+      nn.Softmax(dim=-1)
     )
 
   def forward(self, x: torch.Tensor):
