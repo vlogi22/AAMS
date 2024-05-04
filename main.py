@@ -1,5 +1,3 @@
-import argparse
-
 import numpy as np
 from gym import Env
 from typing import Sequence
@@ -14,16 +12,14 @@ import time
 
 EPSILON_DECAY = 0.99975
 MIN_EPSILON = 0.005
-MIN_REWARD = -200  # For model save
 
-  # not a constant, going to be decayed
 def train_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: int) -> np.ndarray:
   epsilon = 1
   ep_rewards = []
 
   for ep in range(n_eps):
     if not (ep % 500):
-      print("ep: ", ep)
+      print("ep: ", ep, "epsilon", epsilon)
     step = 0
     terminals = [False for _ in range(len(agents))]
     ep_reward = np.zeros(len(agents))
@@ -39,7 +35,7 @@ def train_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: in
           agent.see(observation)
         actions = [agent.action() for agent in agents]
       else:
-        actions = [np.random.randint(0, 5) for _ in agents]
+        actions = [np.random.randint(0, 4) for _ in agents]
 
       newObs, rewards, terminals = env.step(actions)
       #env.render()
@@ -57,13 +53,6 @@ def train_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: in
     # Append episode reward to a list and log stats (every given number of episodes)
     ep_rewards.append(ep_reward)
     #print("ep_reward: ", ep_reward, " epsilon: ", epsilon, " ep: ", ep)
-
-    '''
-    # Save model, but only when min reward is greater or equal a set value
-    if min_reward >= MIN_REWARD:
-      agent.brain.save(f'models/DQN__{max_reward:_>7.2f}max_{average_reward:_>7.2f}avg_
-                {min_reward:_>7.2f}min__{int(time.time())}.model')
-    '''
 
     # Decay epsilon
     if epsilon > MIN_EPSILON:
@@ -115,13 +104,13 @@ if __name__ == '__main__':
   parser.add_argument("--image", type=str, default="image")
   parser.add_argument("--agents", type=int, default=1)
   parser.add_argument("--foods", type=int, default=20)
-  parser.add_argument("--save", type=bool, default=False)
-  parser.add_argument("--load", type=bool, default=False)
-  parser.add_argument("--train", type=bool, default=False)
+  parser.add_argument("--save", action='store_true')
+  parser.add_argument("--load", action='store_true')
+  parser.add_argument("--train", action='store_true')
   opt = parser.parse_args()
 
   DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-  print(f"Using {DEVICE} |", torch.cuda.get_device_name(0))
+  print(f"Using {DEVICE} |", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "")
 
   # 1 - Setup environment
   env = Game(
@@ -152,8 +141,9 @@ if __name__ == '__main__':
   plot(opt.episodes, result, image=opt.image, colors=["orange"])
 
   # 6 - Save model
-  for id, agent in enumerate(agents):
-    agent.save()
+  if opt.save:
+    for id, agent in enumerate(agents):
+      agent.save()
 
   
   

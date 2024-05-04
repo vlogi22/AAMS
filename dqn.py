@@ -17,33 +17,33 @@ class MLP(nn.Module):
     @hiddenLayer : an list of hidden layer sizes.
     @outputLayer : the output layer size.
   '''
-  def __init__(self, outputLayer = 5, dropout=0.1, kernelWindow=(3, 3), stride=1, padding=0):
+  def __init__(self, outputLayer, dropout=0.1, kernelWindow=(3, 3), stride=1, padding=0):
     super(MLP, self).__init__()
 
     self.model_ = nn.Sequential(
       # shape = [Batch_size, 3, 10, 10]
       # formula = (10 - kernel + 2*padding)/stride + 1
-      nn.Conv2d(in_channels=3, out_channels=16, kernel_size=kernelWindow, stride=stride, padding=padding),
+      nn.Conv2d(in_channels=3, out_channels=9, kernel_size=kernelWindow, stride=stride, padding=padding),
       nn.ReLU(), # shape = [Batch_size, 32, 8, 8]
       #nn.MaxPool2d(kernel_size=2, stride=stride), # shape = [Batch_size, 32, 7, 7]
       nn.Dropout(p=dropout),
 
-      nn.Conv2d(in_channels=16, out_channels=32, kernel_size=kernelWindow, stride=stride, padding=padding),
+      nn.Conv2d(in_channels=9, out_channels=27, kernel_size=kernelWindow, stride=stride, padding=padding),
       nn.ReLU(), # shape = [Batch_size, 64, 5, 5]
       #nn.MaxPool2d(kernel_size=2, stride=stride), # shape = [Batch_size, 64, 4, 4]
       nn.Dropout(p=dropout),
         
       nn.Flatten(),
 
-      nn.Linear(32*6*6, 32*6),
+      nn.Linear(27*6*6, 27),
       nn.ReLU(),
       nn.Dropout(p=dropout),
 
-      nn.Linear(32*6, 32),
-      nn.ReLU(),
-      nn.Dropout(p=dropout),
+      #nn.Linear(27*6, 27),
+      #nn.ReLU(),
+      #nn.Dropout(p=dropout),
 
-      nn.Linear(32, outputLayer),
+      nn.Linear(27, outputLayer),
 
       nn.Softmax(dim=-1)
     )
@@ -55,7 +55,7 @@ class MLP(nn.Module):
 
 class DQN():
 
-  def __init__(self, outputLayer = 5, dropout=0.1, kernelWindow=(3,3), stride=1, padding=0, device: str = "cpu"):
+  def __init__(self, outputLayer, dropout=0.1, kernelWindow=(3,3), stride=1, padding=0, device: str = "cpu"):
     
     self.device_ = torch.device(device)
     
@@ -143,9 +143,15 @@ class DQN():
     model_folder_path = './model'
     if not os.path.exists(model_folder_path):
         os.makedirs(model_folder_path)
-
+    
     file_name = os.path.join(model_folder_path, file_name)
-    torch.save(self.model_.state_dict(), file_name)
+    torch.save({
+                'model_state_dict': self.model_.state_dict(),
+                'optimizer_state_dict': self.optimizer_.state_dict(),
+                }, file_name)
+    
+    for param_tensor in self.model_.state_dict():
+      print(param_tensor, "\t", self.model_.state_dict()[param_tensor].size())
 
   def load(self, file_name='model.pth'):
     model_folder_path = './model'
@@ -153,6 +159,13 @@ class DQN():
       print(" > No model found, initializing a default one")
       return
     file_name = os.path.join(model_folder_path, file_name)
-    self.model_.load_state_dict(torch.load(file_name))
-    self.targetModel_.load_state_dict(torch.load(file_name))
+
+    checkpoint = torch.load(file_name)
+    self.model_.load_state_dict(checkpoint['model_state_dict'])
+    self.targetModel_.load_state_dict(checkpoint['model_state_dict'])
+    self.optimizer_.load_state_dict(checkpoint['optimizer_state_dict'])
+
+    self.model_.eval()
+    self.targetModel_.eval()
+    
 

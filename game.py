@@ -13,12 +13,6 @@ from gym.utils import seeding
 from ma_gym.envs.utils.draw import draw_grid, fill_cell, draw_circle, write_cell_text
 
 class Game(gym.Env):
-  SIZE = 10
-  RETURN_IMAGES = True
-
-  OBSERVATION_SPACE_VALUES = (SIZE, SIZE, 3)
-  ACTION_SPACE_SIZE = 5
-
   d = {'player': (255, 175, 0),
         'food': (0, 255, 0),
         'enemy': (0, 0, 255)}
@@ -26,7 +20,7 @@ class Game(gym.Env):
   metadata = {'render.modes': ['human', 'rgb_array']}
 
   def __init__(self, gridShape=(10, 10), nAgents=1, nFoods=1,
-              penalty=-2, stepCost=-1, foodCaptureReward=25, maxSteps=200):
+              penalty=-2, stepCost=-1, foodCaptureReward=50, maxSteps=200):
     self.gridShape_ = gridShape
     self.nAgents_ = nAgents
     self.nFoods_ = nFoods
@@ -81,21 +75,25 @@ class Game(gym.Env):
     self._base_img = draw_grid(self.gridShape_[0], self.gridShape_[1], cell_size=CELL_SIZE, fill='white')
   
   def __get_agent_obs_rgb(self, agentId):
-    env = np.zeros((3, self.gridShape_[0], self.gridShape_[1]), dtype=np.uint8)  # starts an rbg of our size
+    env = np.zeros((3, self.gridShape_[0], self.gridShape_[1]), dtype=np.float32)  # starts an rbg of our size
     
-    for id, [x, y] in self.foodPos_.items():
+    for _, [x, y] in self.foodPos_.items():
       # sets the food location tile to it's color
-      for i, color in enumerate(self.d['food']):
-        env[i][x][y] = color
+      env[0][x][y] = self.d['food'][0]
+      env[1][x][y] = self.d['food'][1]
+      env[2][x][y] = self.d['food'][2]
 
-    for id, [x, y] in self.agentPos_.items():
+    for _, [x, y] in self.agentPos_.items():
       # sets the enemy location tile to it's color
-      for i, color in enumerate(self.d['enemy']):
-        env[i][x][y] = color
+      env[0][x][y] = self.d['enemy'][0]
+      env[1][x][y] = self.d['enemy'][1]
+      env[2][x][y] = self.d['enemy'][2]
 
     # sets the player location tile to it's color
-    for i, color in enumerate(self.d['player']):
-        env[agentId][self.agentPos_[agentId][0]][self.agentPos_[agentId][1]] = color
+    [x, y] = self.agentPos_[agentId]
+    env[0][x][y] = self.d['player'][0]
+    env[1][x][y] = self.d['player'][1]
+    env[2][x][y] = self.d['player'][2]
     
     return env
     
@@ -139,20 +137,20 @@ class Game(gym.Env):
     return self.is_valid(pos) and (self.fullObs_[pos[0]][pos[1]] == PRE_IDS['empty'])
 
   ###
-  def __update_agent_pos(self, agent_i, move):
-    curr_pos = copy.copy(self.agentPos_[agent_i])
+  def __update_agent_pos(self, agentId, move):
+    curr_pos = copy.copy(self.agentPos_[agentId])
     next_pos = self.__next_pos(curr_pos, move)
 
     reward = 0
     foodId = -1
     
     if self._is_cell_vacant(next_pos):
-      self.agentPos_[agent_i] = next_pos
+      self.agentPos_[agentId] = next_pos
       self.fullObs_[curr_pos[0]][curr_pos[1]] = PRE_IDS['empty']
-      self.__update_agent_view(agent_i)
+      self.__update_agent_view(agentId)
     elif self.is_valid(next_pos):
       # Check colisions
-      self.agentPos_[agent_i] = next_pos
+      self.agentPos_[agentId] = next_pos
       for id, pos in self.foodPos_.items():
          if pos == next_pos:
             foodId = id
@@ -176,8 +174,6 @@ class Game(gym.Env):
       next_pos = [curr_pos[0] - 1, curr_pos[1]]
     elif move == 3:  # right
       next_pos = [curr_pos[0], curr_pos[1] + 1]
-    elif move == 4:  # no-op
-      next_pos = curr_pos
     else:
       raise Exception('Action Not found!')
     return next_pos

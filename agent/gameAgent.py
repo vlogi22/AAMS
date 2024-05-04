@@ -1,12 +1,8 @@
 from agent.basicAgent import BasicAgent
 
 import numpy as np
-import torch
 
 from dqn import DQN
-
-N_ACTIONS = 5
-DOWN, LEFT, UP, RIGHT, STAY = range(N_ACTIONS)
 
 class GameAgent(BasicAgent):
 
@@ -14,8 +10,8 @@ class GameAgent(BasicAgent):
       super(GameAgent, self).__init__(f"Greedy Agent")
       self.device_ = device
       self.agentId_ = agentId
-      self.nActions_ = N_ACTIONS
-      self.brain_ = DQN(device=device)
+      self.nActions_ = 4
+      self.brain_ = DQN(outputLayer = self.nActions_, device=device)
 
     def action(self) -> int:
       #print("Qs ", self.brain_.getQs(self.observation/255))
@@ -25,7 +21,7 @@ class GameAgent(BasicAgent):
       self.brain_.updateReplay(obs, action, reward, newObs, done)
 
     def train(self, done, step):
-      self.brain_.train(done, step)
+      return self.brain_.train(done, step)
 
     def save(self, fileName='model.pth'):
       print("agent", self.agentId_, " saving ", fileName)
