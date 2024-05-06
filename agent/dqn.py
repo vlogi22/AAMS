@@ -13,37 +13,40 @@ UPDATE_TARGET_EVERY = 4
 DISCOUNT = 0.95
 
 class MLP(nn.Module):
-  '''
-    @hiddenLayer : an list of hidden layer sizes.
-    @outputLayer : the output layer size.
-  '''
+
   def __init__(self, outputLayer, dropout=0.1):
     super(MLP, self).__init__()
 
-    self.model_ = nn.Sequential(
-      # shape = [Batch_size, 3, 10, 10]
-      # formula = (10 - kernel + 2*padding)/stride + 1
-      nn.Conv2d(in_channels=3, out_channels=16, kernel_size=(4, 4), stride=2),
-      nn.ReLU(), # shape = [Batch_size, 16, 4, 4]
+    self.conv_ = nn.Sequential(
+      # shape = [Batch_size, 3, 50, 50]
+      # formula = lowerBound[(50 - kernel)/stride + 1]
+      nn.Conv2d(in_channels=3, out_channels=16, kernel_size=(6, 6), stride=3),
+      nn.ReLU(), # shape = [Batch_size, 16, 15, 15]
       nn.Dropout(p=dropout),
 
-      nn.Conv2d(in_channels=16, out_channels=32, kernel_size=(2, 2), stride=1),
-      nn.ReLU(), # shape = [Batch_size, 32, 3, 3]
+      nn.Conv2d(in_channels=16, out_channels=32, kernel_size=(4, 4), stride=2),
+      nn.ReLU(), # shape = [Batch_size, 32, 6, 6]
       nn.Dropout(p=dropout),
-        
-      nn.Flatten(),
 
-      nn.Linear(32*3*3, 64),
+      nn.Conv2d(in_channels=32, out_channels=64, kernel_size=(2, 2), stride=1),
+      nn.ReLU(), # shape = [Batch_size, 64, 5, 5]
+      nn.Dropout(p=dropout),
+    )
+
+    self.net_ = nn.Sequential(
+      nn.Linear(64*5*5, 256),
       nn.ReLU(),
       nn.Dropout(p=dropout),
 
-      nn.Linear(64, outputLayer)
+      nn.Linear(256, outputLayer)
     )
 
   def forward(self, x: torch.Tensor):
     #x = torch.tensor(np.array(x), dtype=torch.float32).to(self.device_)
     #print("self.model_(x) ", self.model_(x))
-    return self.model_(x)
+    features = self.conv_(x)
+    features = features.view(features.size(0), -1)
+    return self.net_(features)
 
 class DQN():
 

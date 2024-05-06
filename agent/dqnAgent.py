@@ -5,7 +5,7 @@ from agent.dqn import DQN
 
 class DQNAgent(BasicAgent):
 
-  def __init__(self, agentId, device: str = "cpu"):
+  def __init__(self, agentId, nActions, device: str = "cpu"):
     super(DQNAgent, self).__init__(f"DQNAgent")
     self.device_ = device
     self.agentId_ = agentId
@@ -13,8 +13,8 @@ class DQNAgent(BasicAgent):
     self.brain_ = DQN(outputLayer = self.nActions_, device=device)
 
   def action(self) -> int:
-    #print("Qs ", self.brain_.getQs(self.observation/255))
-    return np.argmax(self.brain_.getQs(self.observation/255))
+    #print("Qs ", self.brain_.getQs(self.obs_/255))
+    return np.argmax(self.brain_.getQs(self.obs_/255))
   
   def updateReplay(self, obs, action, reward, newObs, done):
     self.brain_.updateReplay(obs, action, reward, newObs, done)
