@@ -230,7 +230,6 @@ ACTION_MEANING = {
     1: "LEFT",
     2: "UP",
     3: "RIGHT",
-    4: "NOOP",
 }
 
 PRE_IDS = {

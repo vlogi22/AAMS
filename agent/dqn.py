@@ -6,7 +6,7 @@ from collections import deque
 import random
 import os
 
-MIN_REPLAY_MEMORY_SIZE = 256
+MIN_REPLAY_MEMORY_SIZE = 512
 REPLAY_MEMORY_SIZE = 16_384 # 2^14
 MINIBATCH_SIZE = 64
 UPDATE_TARGET_EVERY = 4
@@ -23,27 +23,21 @@ class MLP(nn.Module):
     self.model_ = nn.Sequential(
       # shape = [Batch_size, 3, 10, 10]
       # formula = (10 - kernel + 2*padding)/stride + 1
-      nn.Conv2d(in_channels=3, out_channels=32, kernel_size=(4, 4), stride=2),
-      nn.ReLU(), # shape = [Batch_size, 32, 4, 4]
+      nn.Conv2d(in_channels=3, out_channels=16, kernel_size=(4, 4), stride=2),
+      nn.ReLU(), # shape = [Batch_size, 16, 4, 4]
       nn.Dropout(p=dropout),
 
-      nn.Conv2d(in_channels=32, out_channels=64, kernel_size=(2, 2), stride=1),
-      nn.ReLU(), # shape = [Batch_size, 64, 3, 3]
+      nn.Conv2d(in_channels=16, out_channels=32, kernel_size=(2, 2), stride=1),
+      nn.ReLU(), # shape = [Batch_size, 32, 3, 3]
       nn.Dropout(p=dropout),
         
       nn.Flatten(),
 
-      nn.Linear(64*3*3, 64*3),
+      nn.Linear(32*3*3, 64),
       nn.ReLU(),
       nn.Dropout(p=dropout),
 
-      nn.Linear(64*3, 64),
-      nn.ReLU(),
-      nn.Dropout(p=dropout),
-
-      nn.Linear(64, outputLayer),
-
-      nn.Softmax(dim=-1)
+      nn.Linear(64, outputLayer)
     )
 
   def forward(self, x: torch.Tensor):
@@ -92,17 +86,12 @@ class DQN():
     # Get a minibatch of random samples from memory replay table
     minibatch = random.sample(self.replayMemory_, MINIBATCH_SIZE)
 
-    current_states = torch.tensor((np.array([transition[0] for transition in minibatch])/255), 
-                                  dtype=torch.float32).to(self.device_)
-    rewards = torch.tensor((np.array([transition[2] for transition in minibatch])), 
-                                  dtype=torch.float32).to(self.device_)
-    new_current_states = torch.tensor((np.array([transition[3] for transition in minibatch])/255), 
-                                  dtype=torch.float32).to(self.device_)
-    dones = torch.tensor((np.array([transition[4] for transition in minibatch])), 
-                                  dtype=torch.float32).to(self.device_)
+    current_states = torch.FloatTensor(np.array([transition[0] for transition in minibatch])/255).to(self.device_)
+    rewards = torch.FloatTensor(np.array([transition[2] for transition in minibatch])).to(self.device_)
+    new_current_states = torch.FloatTensor(np.array([transition[3] for transition in minibatch])/255).to(self.device_)
+    dones = torch.FloatTensor(np.array([transition[4] for transition in minibatch])).to(self.device_)
 
     future_qs_list = self.targetModel_(new_current_states)
-    X = []
     y = self.model_(current_states).max(1).values
     yHat = rewards + DISCOUNT * future_qs_list.max(dim=1)[0] * (1 - dones)
 

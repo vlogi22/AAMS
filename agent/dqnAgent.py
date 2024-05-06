@@ -1,13 +1,12 @@
-from agent.basicAgent import BasicAgent
-
 import numpy as np
 
-from dqn import DQN
+from agent.basicAgent import BasicAgent
+from agent.dqn import DQN
 
-class GameAgent(BasicAgent):
+class DQNAgent(BasicAgent):
 
     def __init__(self, agentId, device: str = "cpu"):
-      super(GameAgent, self).__init__(f"Greedy Agent")
+      super(DQNAgent, self).__init__(f"DQNAgent")
       self.device_ = device
       self.agentId_ = agentId
       self.nActions_ = 4

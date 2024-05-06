@@ -5,12 +5,12 @@ import argparse
 
 import torch
 from agent.basicAgent import BasicAgent
-from agent.gameAgent import GameAgent
+from agent.dqnAgent import DQNAgent
 from utils import plot
 from game import Game
 import time
 
-EPSILON_DECAY = 0.99975
+EPSILON_DECAY = 0.9999
 MIN_EPSILON = 0.005
 
 def train_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: int) -> np.ndarray:
@@ -52,7 +52,6 @@ def train_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: in
       
     # Append episode reward to a list and log stats (every given number of episodes)
     ep_rewards.append(ep_reward)
-    #print("ep_reward: ", ep_reward, " epsilon: ", epsilon, " ep: ", ep)
 
     # Decay epsilon
     if epsilon > MIN_EPSILON:
@@ -120,7 +119,7 @@ if __name__ == '__main__':
   )
 
   # 2 - Setup agent
-  agents = [GameAgent(agentId=id, device = DEVICE) for id in range(0, 1)]
+  agents = [DQNAgent(agentId=id, device = DEVICE) for id in range(0, 1)]
   
   # 3 - Setup agent
   if opt.load:
