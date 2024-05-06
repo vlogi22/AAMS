@@ -9,7 +9,7 @@ import os
 MIN_REPLAY_MEMORY_SIZE = 256
 REPLAY_MEMORY_SIZE = 16_384 # 2^14
 MINIBATCH_SIZE = 64
-UPDATE_TARGET_EVERY = 8
+UPDATE_TARGET_EVERY = 4
 DISCOUNT = 0.95
 
 class MLP(nn.Module):
@@ -17,33 +17,31 @@ class MLP(nn.Module):
     @hiddenLayer : an list of hidden layer sizes.
     @outputLayer : the output layer size.
   '''
-  def __init__(self, outputLayer, dropout=0.1, kernelWindow=(3, 3), stride=1, padding=0):
+  def __init__(self, outputLayer, dropout=0.1):
     super(MLP, self).__init__()
 
     self.model_ = nn.Sequential(
       # shape = [Batch_size, 3, 10, 10]
       # formula = (10 - kernel + 2*padding)/stride + 1
-      nn.Conv2d(in_channels=3, out_channels=9, kernel_size=kernelWindow, stride=stride, padding=padding),
-      nn.ReLU(), # shape = [Batch_size, 32, 8, 8]
-      #nn.MaxPool2d(kernel_size=2, stride=stride), # shape = [Batch_size, 32, 7, 7]
+      nn.Conv2d(in_channels=3, out_channels=32, kernel_size=(4, 4), stride=2),
+      nn.ReLU(), # shape = [Batch_size, 32, 4, 4]
       nn.Dropout(p=dropout),
 
-      nn.Conv2d(in_channels=9, out_channels=27, kernel_size=kernelWindow, stride=stride, padding=padding),
-      nn.ReLU(), # shape = [Batch_size, 64, 5, 5]
-      #nn.MaxPool2d(kernel_size=2, stride=stride), # shape = [Batch_size, 64, 4, 4]
+      nn.Conv2d(in_channels=32, out_channels=64, kernel_size=(2, 2), stride=1),
+      nn.ReLU(), # shape = [Batch_size, 64, 3, 3]
       nn.Dropout(p=dropout),
         
       nn.Flatten(),
 
-      nn.Linear(27*6*6, 27),
+      nn.Linear(64*3*3, 64*3),
       nn.ReLU(),
       nn.Dropout(p=dropout),
 
-      #nn.Linear(27*6, 27),
-      #nn.ReLU(),
-      #nn.Dropout(p=dropout),
+      nn.Linear(64*3, 64),
+      nn.ReLU(),
+      nn.Dropout(p=dropout),
 
-      nn.Linear(27, outputLayer),
+      nn.Linear(64, outputLayer),
 
       nn.Softmax(dim=-1)
     )
@@ -55,17 +53,12 @@ class MLP(nn.Module):
 
 class DQN():
 
-  def __init__(self, outputLayer, dropout=0.1, kernelWindow=(3,3), stride=1, padding=0, device: str = "cpu"):
+  def __init__(self, outputLayer, dropout=0.1, device: str = "cpu"):
     
     self.device_ = torch.device(device)
-    
-    self.epsilon = 0.5
-    self.epsilon_decay = 0.9975
-    self.epsilon_min = 0.001
-    self.discount_factor = 0.1
 
-    self.model_ = MLP(outputLayer, dropout, kernelWindow, stride, padding).to(device)
-    self.targetModel_ = MLP(outputLayer, dropout, kernelWindow, stride, padding).to(device)
+    self.model_ = MLP(outputLayer, dropout).to(device)
+    self.targetModel_ = MLP(outputLayer, dropout).to(device)
     self.targetModel_.load_state_dict(self.model_.state_dict())
 
     # An array with last n steps for training
@@ -84,8 +77,7 @@ class DQN():
   @torch.no_grad()
   def getQs(self, state):
     state = torch.tensor(np.array([state]), dtype=torch.float32).to(self.device_)
-    #print("Qs ", self.model_(state))
-    return self.model_(state).cpu().detach().numpy().squeeze()
+    return self.targetModel_(state).cpu().detach().numpy().squeeze()
   
   def updateReplay(self, obs, action, reward, newObs, done):
     self.replayMemorySize_ += 1
@@ -102,27 +94,19 @@ class DQN():
 
     current_states = torch.tensor((np.array([transition[0] for transition in minibatch])/255), 
                                   dtype=torch.float32).to(self.device_)
+    rewards = torch.tensor((np.array([transition[2] for transition in minibatch])), 
+                                  dtype=torch.float32).to(self.device_)
     new_current_states = torch.tensor((np.array([transition[3] for transition in minibatch])/255), 
-                                      dtype=torch.float32).to(self.device_)
+                                  dtype=torch.float32).to(self.device_)
+    dones = torch.tensor((np.array([transition[4] for transition in minibatch])), 
+                                  dtype=torch.float32).to(self.device_)
 
     future_qs_list = self.targetModel_(new_current_states)
-
     X = []
     y = self.model_(current_states).max(1).values
-    yHat = []
-
-    # Now we need to enumerate our batches
-    for index, (current_state, action, reward, _, done) in enumerate(minibatch):
-      max_future_q = future_qs_list[index].max()
-      new_q = reward + DISCOUNT * max_future_q * (1 - done)
-
-      # And append to our training data
-      X.append(current_state) # Images as Input
-      yHat.append(new_q)    # Expected Q-value
+    yHat = rewards + DISCOUNT * future_qs_list.max(dim=1)[0] * (1 - dones)
 
     y = y.to(self.device_)
-    yHat = torch.tensor(yHat, dtype=torch.float32).to(self.device_)
-
     self.optimizer_.zero_grad()
     loss = self.criterion_(y, yHat)
     loss.backward()
