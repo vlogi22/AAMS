@@ -21,37 +21,53 @@ class Game(gym.Env):
 
   def __init__(self, gridShape=(10, 10), nAgents=1, nFoods=1,
               penalty=-2, stepCost=-1, foodCaptureReward=50, maxSteps=200):
+    
+    # Game Args
     self.gridShape_ = gridShape
     self.nAgents_ = nAgents
     self.nFoods_ = nFoods
     self.maxSteps_ = maxSteps
-    self.stepCount_ = None
+    self.stepCount_ = 0
+
+    # Scores
     self.penalty_ = penalty
     self.stepCost_ = stepCost
     self.foodCaptureReward_ = foodCaptureReward
 
-    self.agentPos_ = {_: None for _ in range(self.nAgents_)}
-    self.foodPos_ = {_: None for _ in range(self.nFoods_)}
+    # Game objects
+    self.foodPos_ = {id:None for id in range(self.nFoods_)}
     self.foodExists_ = {id:True for id in range(self.nFoods_)}
+
+    self.agentPos_ = {id:None for id in range(self.nAgents_)}
     self.agentDones_ = {id:False for id in range(self.nAgents_)}
 
+    # Game Map View
     self.baseGrid_ = self.__create_grid()  # with no agents
     self.fullObs_ = self.__create_grid()
     self.viewer_ = None
 
-    self.seed()
+    self.seed(0)
 
+  def seed(self, n=None):
+    self.np_random, seed = seeding.np_random(n)
+    return [seed]
+  
   def reset(self, nFoods = 20):
-    self.agentPos_ = {}
-    self.foodPos_ = {}
+    # Game Args
+    self.stepCount_ = 0
     self.nFoods_ = nFoods
 
-    self.__init_full_obs()
-    self.stepCount_ = 0
-    self.agentDones_ = {id:False for id in range(self.nAgents_)}
+    # Scores
+    self.foodPos_ = {id:None for id in range(self.nFoods_)}
     self.foodExists_ = {id:True for id in range(self.nFoods_)}
 
-    return [self.__get_agent_obs_rgb(agentId) for agentId in range(0, self.nAgents_)]
+    self.agentPos_ = {id:None for id in range(self.nAgents_)}
+    self.agentDones_ = {id:False for id in range(self.nAgents_)}
+
+    # Game Map View
+    self.__init_full_obs()
+
+    return [self.__get_agent_obs(agentId) for agentId in range(0, self.nAgents_)]
 
   def step(self, agents_action):
     self.stepCount_ += 1
@@ -63,18 +79,13 @@ class Game(gym.Env):
         rewards[agent_i] += self.__update_agent_pos(agent_i, action)
 
     if (self.stepCount_ >= self.maxSteps_) or (True not in self.foodExists_.values()):
- 
       for i in range(self.nAgents_):
         self.agentDones_[i] = True
 
-    return [self.__get_agent_obs_rgb(agentId) for agentId in range(0, self.nAgents_)], \
-                rewards, self.agentDones_.values()
+    return [self.__get_agent_obs(agentId) for agentId in range(0, self.nAgents_)], \
+              rewards, self.agentDones_.values()
 
-  ###
-  def __draw_base_img(self):
-    self._base_img = draw_grid(self.gridShape_[0], self.gridShape_[1], cell_size=CELL_SIZE, fill='white')
-  
-  def __get_agent_obs_rgb(self, agentId):
+  def __get_agent_obs(self, agentId):
     env = np.zeros((3, self.gridShape_[0], self.gridShape_[1]), dtype=np.float32)  # starts an rbg of our size
     
     for _, [x, y] in self.foodPos_.items():
@@ -96,47 +107,49 @@ class Game(gym.Env):
     env[2][x][y] = self.d['player'][2]
     
     return env
-    
-  ###
-  def __create_grid(self):
-    _grid = [[PRE_IDS['empty'] for _ in range(self.gridShape_[1])] for _ in range(self.gridShape_[0])]
-    return _grid
 
-  ###
   def __init_full_obs(self):
     self.fullObs_ = self.__create_grid()
 
     for agent_i in range(self.nAgents_):
-      while True:
+      pos = [-1, -1]
+      while not self._is_cell_vacant(pos):
         pos = [self.np_random.randint(0, self.gridShape_[0] - 1),
                 self.np_random.randint(0, self.gridShape_[1] - 1)]
-        if self._is_cell_vacant(pos):
-          self.agentPos_[agent_i] = pos
-          break
+      self.agentPos_[agent_i] = pos
       # Add the agent to the grid
       self.__update_agent_view(agent_i)
 
     for food_i in range(self.nFoods_):
-      while True:
+      pos = [-1, -1]
+      while not self._is_cell_vacant(pos):
         pos = [self.np_random.randint(0, self.gridShape_[0] - 1),
                 self.np_random.randint(0, self.gridShape_[1] - 1)]
-        if self._is_cell_vacant(pos):
-          self.foodPos_[food_i] = pos
-          break
+      self.foodPos_[food_i] = pos
       # Add the food to the grid
       self.__update_food_view(food_i)
 
-    self.__draw_base_img()
-
-  ###
   def is_valid(self, pos):
     return (0 <= pos[0] < self.gridShape_[0]) and (0 <= pos[1] < self.gridShape_[1])
 
-  ###
   def _is_cell_vacant(self, pos):
     return self.is_valid(pos) and (self.fullObs_[pos[0]][pos[1]] == PRE_IDS['empty'])
 
-  ###
+#
+# Grid
+#
+
+  def __create_grid(self):
+    return [[PRE_IDS['empty'] for _ in range(self.gridShape_[1])] for _ in range(self.gridShape_[0])]
+  
+  def __update_agent_view(self, agent_i):
+    [x, y] = self.agentPos_[agent_i]
+    self.fullObs_[x][y] = PRE_IDS['agent'] + str(agent_i)
+
+  def __update_food_view(self, food_i):
+    [x, y] = self.foodPos_[food_i]
+    self.fullObs_[x][y] = PRE_IDS['food'] + str(food_i)
+
   def __update_agent_pos(self, agentId, move):
     curr_pos = copy.copy(self.agentPos_[agentId])
     next_pos = self.__next_pos(curr_pos, move)
@@ -177,15 +190,13 @@ class Game(gym.Env):
     else:
       raise Exception('Action Not found!')
     return next_pos
-  ###
-  def __update_agent_view(self, agent_i):
-    self.fullObs_[self.agentPos_[agent_i][0]][self.agentPos_[agent_i][1]] = PRE_IDS['agent'] + str(agent_i + 1)
-  ###
-  def __update_food_view(self, food_i):
-    self.fullObs_[self.foodPos_[food_i][0]][self.foodPos_[food_i][1]] = PRE_IDS['food'] + str(food_i + 1)
-
+  
+#
+# Rendering
+#
+    
   def render(self, mode='human'):
-    img = copy.copy(self._base_img)
+    img = draw_grid(self.gridShape_[0], self.gridShape_[1], cell_size=CELL_SIZE, fill='white')
 
     for agent_i in self.agentPos_.keys():
       draw_circle(img, self.agentPos_[agent_i], cell_size=CELL_SIZE, fill=AGENT_COLOR)
@@ -208,12 +219,6 @@ class Game(gym.Env):
       self.viewer_.imshow(img)
       return self.viewer_.isopen
 
-  ###
-  def seed(self, n=None):
-    self.np_random, seed = seeding.np_random(n)
-    return [seed]
-
-  ###
   def close(self):
     if self.viewer_ is not None:
       self.viewer_.close()

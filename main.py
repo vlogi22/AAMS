@@ -113,13 +113,13 @@ if __name__ == '__main__':
 
   # 1 - Setup environment
   env = Game(
-    gridShape=(10, 10),
+    gridShape=(50, 50),
     nAgents=opt.agents, nFoods=opt.foods,
     maxSteps=200
   )
 
   # 2 - Setup agent
-  agents = [DQNAgent(agentId=id, device = DEVICE) for id in range(0, 1)]
+  agents = [DQNAgent(agentId=id, nActions=50*50, device = DEVICE) for id in range(0, opt.agents)]
   
   # 3 - Setup agent
   if opt.load:
