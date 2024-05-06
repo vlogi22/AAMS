@@ -62,7 +62,7 @@ class DQN():
     self.targetModel_.load_state_dict(self.model_.state_dict())
 
     # An array with last n steps for training
-    self.replayMemory_ = deque(maxlen=MIN_REPLAY_MEMORY_SIZE)
+    self.replayMemory_ = deque(maxlen=REPLAY_MEMORY_SIZE)
     self.replayMemorySize_ = 0
 
     # Used to count when to update target network with main network's weights
