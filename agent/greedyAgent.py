@@ -35,11 +35,10 @@ class GreedyAgent(BasicAgent):
     """
     distances = np.array(foodPosition) - np.array(agentPosition)
     absDistances = np.absolute(distances)
-    print(agentPosition, foodPosition, distances, absDistances)
     if absDistances[0] > absDistances[1]:
-      return self._closeHorizontally(distances)
-    elif absDistances[0] < absDistances[1]:
       return self._closeVertically(distances)
+    elif absDistances[0] < absDistances[1]:
+      return self._closeHorizontally(distances)
     else:
       roll = random.uniform(0, 1)
       return self._closeHorizontally(distances) if roll > 0.5 else self._closeVertically(distances)
@@ -63,17 +62,17 @@ class GreedyAgent(BasicAgent):
     return closestfoodPosition
 
   def _closeHorizontally(self, distances):
-    if distances[0] > 0:
+    if distances[1] > 0:
       return RIGHT
-    elif distances[0] < 0:
+    elif distances[1] < 0:
       return LEFT
     else:
       return STAY
 
   def _closeVertically(self, distances):
-    if distances[1] > 0:
+    if distances[0] > 0:
       return DOWN
-    elif distances[1] < 0:
+    elif distances[0] < 0:
       return UP
     else:
       return STAY

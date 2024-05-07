@@ -86,23 +86,23 @@ class Game(gym.Env):
   def __get_agent_obs(self, agentId):
     env = np.zeros((3, self.gridShape_[0], self.gridShape_[1]), dtype=np.float32)  # starts an rbg of our size
     
-    for _, [x, y] in self.foodPos_.items():
+    for _, [row, col] in self.foodPos_.items():
       # sets the food location tile to it's color
-      env[0][x][y] = self.d['food'][0]
-      env[1][x][y] = self.d['food'][1]
-      env[2][x][y] = self.d['food'][2]
+      env[0][row][col] = self.d['food'][0]
+      env[1][row][col] = self.d['food'][1]
+      env[2][row][col] = self.d['food'][2]
 
-    for _, [x, y] in self.agentPos_.items():
+    for _, [row, col] in self.agentPos_.items():
       # sets the enemy location tile to it's color
-      env[0][x][y] = self.d['enemy'][0]
-      env[1][x][y] = self.d['enemy'][1]
-      env[2][x][y] = self.d['enemy'][2]
+      env[0][row][col] = self.d['enemy'][0]
+      env[1][row][col] = self.d['enemy'][1]
+      env[2][row][col] = self.d['enemy'][2]
 
     # sets the player location tile to it's color
-    [x, y] = self.agentPos_[agentId]
-    env[0][x][y] = self.d['player'][0]
-    env[1][x][y] = self.d['player'][1]
-    env[2][x][y] = self.d['player'][2]
+    [row, col] = self.agentPos_[agentId]
+    env[0][row][col] = self.d['player'][0]
+    env[1][row][col] = self.d['player'][1]
+    env[2][row][col] = self.d['player'][2]
     
     return env
 
@@ -141,12 +141,12 @@ class Game(gym.Env):
     return [[PRE_IDS['empty'] for _ in range(self.gridShape_[1])] for _ in range(self.gridShape_[0])]
   
   def __update_agent_view(self, agent_i):
-    [x, y] = self.agentPos_[agent_i]
-    self.fullObs_[x][y] = PRE_IDS['agent'] + str(agent_i)
+    [row, col] = self.agentPos_[agent_i]
+    self.fullObs_[row][col] = PRE_IDS['agent'] + str(agent_i)
 
   def __update_food_view(self, food_i):
-    [x, y] = self.foodPos_[food_i]
-    self.fullObs_[x][y] = PRE_IDS['food'] + str(food_i)
+    [row, col] = self.foodPos_[food_i]
+    self.fullObs_[row][col] = PRE_IDS['food'] + str(food_i)
 
   def __update_agent_pos(self, agentId, move):
     curr_pos = copy.copy(self.agentPos_[agentId])
