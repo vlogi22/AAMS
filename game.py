@@ -36,7 +36,6 @@ class Game(gym.Env):
 
     # Game objects
     self.foodPos_ = {id:None for id in range(self.nFoods_)}
-    self.foodExists_ = {id:True for id in range(self.nFoods_)}
 
     self.agentPos_ = {id:None for id in range(self.nAgents_)}
     self.agentDones_ = {id:False for id in range(self.nAgents_)}
@@ -59,7 +58,6 @@ class Game(gym.Env):
 
     # Scores
     self.foodPos_ = {id:None for id in range(self.nFoods_)}
-    self.foodExists_ = {id:True for id in range(self.nFoods_)}
 
     self.agentPos_ = {id:None for id in range(self.nAgents_)}
     self.agentDones_ = {id:False for id in range(self.nAgents_)}
@@ -67,7 +65,7 @@ class Game(gym.Env):
     # Game Map View
     self.__init_full_obs()
 
-    return [self.__get_agent_obs(agentId) for agentId in range(0, self.nAgents_)]
+    return [self.__get_agent_obs(agentId) for agentId in range(0, self.nAgents_)], [self.agentPos_, self.foodPos_]
 
   def step(self, agents_action):
     self.stepCount_ += 1
@@ -78,12 +76,12 @@ class Game(gym.Env):
         # After a move, it will return a additional reward value if something happen
         rewards[agent_i] += self.__update_agent_pos(agent_i, action)
 
-    if (self.stepCount_ >= self.maxSteps_) or (True not in self.foodExists_.values()):
+    if (self.stepCount_ >= self.maxSteps_) or (not self.foodPos_):
       for i in range(self.nAgents_):
         self.agentDones_[i] = True
 
     return [self.__get_agent_obs(agentId) for agentId in range(0, self.nAgents_)], \
-              rewards, self.agentDones_.values()
+              [self.agentPos_, self.foodPos_], rewards, self.agentDones_.values()
 
   def __get_agent_obs(self, agentId):
     env = np.zeros((3, self.gridShape_[0], self.gridShape_[1]), dtype=np.float32)  # starts an rbg of our size
@@ -175,7 +173,6 @@ class Game(gym.Env):
     if foodId != -1:
       self.nFoods_ -= 1
       self.foodPos_.pop(foodId)
-      self.foodExists_.pop(foodId)
     return reward
 
   def __next_pos(self, curr_pos, move):
@@ -187,6 +184,8 @@ class Game(gym.Env):
       next_pos = [curr_pos[0] - 1, curr_pos[1]]
     elif move == 3:  # right
       next_pos = [curr_pos[0], curr_pos[1] + 1]
+    elif move == 4:  # stay
+      next_pos = curr_pos
     else:
       raise Exception('Action Not found!')
     return next_pos
@@ -204,10 +203,9 @@ class Game(gym.Env):
                       fill='white', margin=0.4)
 
     for food_i in self.foodPos_.keys():
-      if self.foodExists_[food_i]:
-          draw_circle(img, self.foodPos_[food_i], cell_size=CELL_SIZE, fill=FOOD_COLOR)
-          write_cell_text(img, text=str(food_i), pos=self.foodPos_[food_i], cell_size=CELL_SIZE,
-                          fill='white', margin=0.4)
+      draw_circle(img, self.foodPos_[food_i], cell_size=CELL_SIZE, fill=FOOD_COLOR)
+      write_cell_text(img, text=str(food_i), pos=self.foodPos_[food_i], cell_size=CELL_SIZE,
+                      fill='white', margin=0.4)
 
     img = np.asarray(img)
     if mode == 'rgb_array':
