@@ -6,6 +6,8 @@ import argparse
 import torch
 from agent.basicAgent import BasicAgent
 from agent.dqnAgent import DQNAgent
+from agent.greedyAgent import GreedyAgent
+from agent.randomAgent import RandomAgent
 from utils import plot
 from game import Game
 import time
@@ -23,7 +25,7 @@ def train_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: in
     step = 0
     terminals = [False for _ in range(len(agents))]
     ep_reward = np.zeros(len(agents))
-    obs = env.reset(n_foods)
+    obs, info = env.reset(n_foods)
     #env.render()
 
     while not all(terminals):
@@ -32,12 +34,13 @@ def train_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: in
 
       if np.random.random() > epsilon:
         for observation, agent in zip(obs, agents):
-          agent.see(observation)
+          agent.see(observation, info)
+
         actions = [agent.action() for agent in agents]
       else:
         actions = [np.random.randint(0, 4) for _ in agents]
 
-      newObs, rewards, terminals = env.step(actions)
+      newObs, info, rewards, terminals = env.step(actions)
       #env.render()
       #time.sleep(0.1)
       # Transform new continous state to new discrete state and count reward
@@ -70,7 +73,7 @@ def run_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: int)
     step = 0
     terminals = [False for _ in range(len(agents))]
     ep_reward = np.zeros(len(agents))
-    obs = env.reset(n_foods)
+    obs, info = env.reset(n_foods)
     env.render()
   
     while not all(terminals):
@@ -78,10 +81,10 @@ def run_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: int)
       actions = []
 
       for observation, agent in zip(obs, agents):
-        agent.see(observation)
+        agent.see(observation, info)
       actions = [agent.action() for agent in agents]
 
-      newObs, rewards, terminals = env.step(actions)
+      newObs, info, rewards, terminals = env.step(actions)
 
       env.render()
       time.sleep(0.1)
@@ -119,7 +122,7 @@ if __name__ == '__main__':
   )
 
   # 2 - Setup agent
-  agents = [DQNAgent(agentId=id, nActions=50*50, device = DEVICE) for id in range(0, opt.agents)]
+  agents = [GreedyAgent(agentId=id) for id in range(0, opt.agents)]
   
   # 3 - Setup agent
   if opt.load:
