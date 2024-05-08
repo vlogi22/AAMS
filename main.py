@@ -5,19 +5,18 @@ import argparse
 
 import torch
 from agent.basicAgent import BasicAgent
-from agent.dqnAgent import DQNAgent
-from agent.greedyAgent import GreedyAgent
-from agent.randomAgent import RandomAgent
+from agent.greedyDqnAgent import GreedyDQNAgent
 from utils import plot
 from game import Game
 import time
 
-EPSILON_DECAY = 0.9999
+EPSILON_DECAY = 0.99998
 MIN_EPSILON = 0.005
 
 def train_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: int) -> np.ndarray:
   epsilon = 1
   ep_rewards = []
+  gridShape = env.getGridShape()
 
   for ep in range(n_eps):
     if not (ep % 500):
@@ -28,30 +27,35 @@ def train_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: in
     obs, info = env.reset(n_foods)
     #env.render()
 
+    for observation, agent in zip(obs, agents):
+      agent.see(observation, info)
+
+    if np.random.random() > epsilon:
+      spawnActions = [agent.spawnAction() for agent in agents]
+      spawnPos = [[act//gridShape[0], act%gridShape[1]] for act in spawnActions]
+    else:
+      spawnActions = [np.random.randint(0, gridShape[0]*gridShape[1]) for _ in agents]
+      spawnPos = [[act//gridShape[0], act%gridShape[1]] for act in spawnActions]
+    
+    for agent, pos in zip(agents, spawnPos):
+      env.spawn(agent, pos)
+
+    newObs = [env.get_agent_obs(agent.id()) for agent in agents]
+
     while not all(terminals):
       step += 1
-      actions = []
 
-      if np.random.random() > epsilon:
-        for observation, agent in zip(obs, agents):
-          agent.see(observation, info)
-
-        actions = [agent.action() for agent in agents]
-      else:
-        actions = [np.random.randint(0, 4) for _ in agents]
-
-      newObs, info, rewards, terminals = env.step(actions)
+      moveActions = [agent.moveAction() for agent in agents]
+      _, info, rewards, terminals = env.step(moveActions)
       #env.render()
       #time.sleep(0.1)
       # Transform new continous state to new discrete state and count reward
       ep_reward += rewards
 
-      # Every step we update replay memory and train main network
-      for ob, agent, action, reward, newOb in zip(obs, agents, actions, rewards, newObs):
-        agent.updateReplay(ob, action, reward, newOb, all(terminals))
-        agent.train(all(terminals), step)
-
-      obs = newObs
+    # Every step we update replay memory and train main network
+    for ob, agent, action, reward, newOb in zip(obs, agents, spawnActions, ep_reward, newObs):
+      agent.updateReplay(ob, action, reward, newOb, all(terminals))
+      agent.train(all(terminals), step)
       
     # Append episode reward to a list and log stats (every given number of episodes)
     ep_rewards.append(ep_reward)
@@ -68,6 +72,7 @@ def train_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: in
 def run_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: int) -> np.ndarray:
   results = np.zeros(n_eps)
   ep_rewards = []
+  gridShape = env.getGridShape()
 
   for ep in range(n_eps):
     step = 0
@@ -75,19 +80,23 @@ def run_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: int)
     ep_reward = np.zeros(len(agents))
     obs, info = env.reset(n_foods)
     env.render()
+
+    for observation, agent in zip(obs, agents):
+      agent.see(observation, info)
+    spawnActions = [agent.spawnAction() for agent in agents]
+    spawnPos = [[act//gridShape[0], act%gridShape[1]] for act in spawnActions]
+
+    for agent, pos in zip(agents, spawnPos):
+      env.spawn(agent, pos)
   
     while not all(terminals):
       step += 1
-      actions = []
 
-      for observation, agent in zip(obs, agents):
-        agent.see(observation, info)
-      actions = [agent.action() for agent in agents]
-
-      newObs, info, rewards, terminals = env.step(actions)
+      moveActions = [agent.moveAction() for agent in agents]
+      newObs, info, rewards, terminals = env.step(moveActions)
 
       env.render()
-      time.sleep(0.1)
+      #time.sleep(0.1)
       ep_reward += rewards
       obs = newObs
       
@@ -122,7 +131,7 @@ if __name__ == '__main__':
   )
 
   # 2 - Setup agent
-  agents = [GreedyAgent(agentId=id) for id in range(0, opt.agents)]
+  agents = [GreedyDQNAgent(agentId=id, nSpawns=50*50) for id in range(0, opt.agents)]
   
   # 3 - Setup agent
   if opt.load:

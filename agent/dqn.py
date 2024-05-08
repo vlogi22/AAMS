@@ -14,7 +14,7 @@ DISCOUNT = 0.95
 
 class MLP(nn.Module):
 
-  def __init__(self, outputLayer, dropout=0.1):
+  def __init__(self, outputLayer: int, dropout=0.1):
     super(MLP, self).__init__()
 
     self.conv_ = nn.Sequential(
@@ -42,8 +42,6 @@ class MLP(nn.Module):
     )
 
   def forward(self, x: torch.Tensor):
-    #x = torch.tensor(np.array(x), dtype=torch.float32).to(self.device_)
-    #print("self.model_(x) ", self.model_(x))
     features = self.conv_(x)
     features = features.view(features.size(0), -1)
     return self.net_(features)

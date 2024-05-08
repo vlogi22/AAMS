@@ -20,7 +20,7 @@ class Game(gym.Env):
   metadata = {'render.modes': ['human', 'rgb_array']}
 
   def __init__(self, gridShape=(10, 10), nAgents=1, nFoods=1,
-              penalty=-2, stepCost=-1, foodCaptureReward=50, maxSteps=200):
+              penalty=-2, stepCost=-1, foodCaptureReward=5, maxSteps=100):
     
     # Game Args
     self.gridShape_ = gridShape
@@ -47,6 +47,9 @@ class Game(gym.Env):
 
     self.seed(0)
 
+  def getGridShape(self):
+    return self.gridShape_
+
   def seed(self, n=None):
     self.np_random, seed = seeding.np_random(n)
     return [seed]
@@ -65,7 +68,11 @@ class Game(gym.Env):
     # Game Map View
     self.__init_full_obs()
 
-    return [self.__get_agent_obs(agentId) for agentId in range(0, self.nAgents_)], [self.agentPos_, self.foodPos_]
+    return [self.get_agent_obs(agentId) for agentId in range(0, self.nAgents_)], [self.agentPos_, self.foodPos_]
+
+  def spawn(self, agent, pos):
+    self.agentPos_[agent.id()] = pos
+    self.__update_agent_view(agent.id())
 
   def step(self, agents_action):
     self.stepCount_ += 1
@@ -80,10 +87,10 @@ class Game(gym.Env):
       for i in range(self.nAgents_):
         self.agentDones_[i] = True
 
-    return [self.__get_agent_obs(agentId) for agentId in range(0, self.nAgents_)], \
+    return [self.get_agent_obs(agentId) for agentId in range(0, self.nAgents_)], \
               [self.agentPos_, self.foodPos_], rewards, self.agentDones_.values()
 
-  def __get_agent_obs(self, agentId):
+  def get_agent_obs(self, agentId):
     env = np.zeros((3, self.gridShape_[0], self.gridShape_[1]), dtype=np.float32)  # starts an rbg of our size
     
     for _, [row, col] in self.foodPos_.items():

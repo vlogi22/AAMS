@@ -5,14 +5,13 @@ from agent.dqn import DQN
 
 class DQNAgent(BasicAgent):
 
-  def __init__(self, agentId, nActions, device: str = "cpu"):
-    super(DQNAgent, self).__init__(f"DQNAgent")
+  def __init__(self, agentId, nSpawns, name, device: str = "cpu"):
+    super(DQNAgent, self).__init__(agentId, name)
     self.device_ = device
-    self.agentId_ = agentId
-    self.nActions_ = 4
-    self.brain_ = DQN(outputLayer = self.nActions_, device=device)
+    self.nSpawns_ = nSpawns
+    self.brain_ = DQN(outputLayer = nSpawns, device=device)
 
-  def action(self) -> int:
+  def spawnAction(self) -> int:
     #print("Qs ", self.brain_.getQs(self.obs_/255))
     return np.argmax(self.brain_.getQs(self.obs_/255))
   
