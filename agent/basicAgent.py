@@ -1,9 +1,10 @@
 import numpy as np
-from abc import ABC, abstractmethod
+from abc import ABC
 
 class BasicAgent(ABC):
 
-  def __init__(self, name: str):
+  def __init__(self, agentId: int, name: str):
+    self.agentId_ = agentId
     self.name_ = name
     self.obs_ = None
     self.obsInfo_ = None
@@ -12,6 +13,8 @@ class BasicAgent(ABC):
     self.obs_ = observation
     self.obsInfo_ = obsInfo
 
-  @abstractmethod
-  def action(self) -> int:
-    raise NotImplementedError()
+  def name(self) -> str:
+    return self.name_
+  
+  def id(self) -> int:
+    return self.agentId_

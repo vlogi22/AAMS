@@ -8,10 +8,9 @@ DOWN, LEFT, UP, RIGHT, STAY = range(N_ACTIONS)
 
 class RandomAgent(BasicAgent):
 
-    def __init__(self, agentId):
-        super(RandomAgent, self).__init__("Random Agent")
-        self.agentId = agentId
-        self.nActions = N_ACTIONS
+  def __init__(self, agentId):
+    super(RandomAgent, self).__init__(agentId, "Random Agent")
+    self.nActions = N_ACTIONS
 
-    def action(self) -> int:
-        return np.random.randint(self.nActions)
+  def action(self) -> int:
+    return np.random.randint(self.nActions)

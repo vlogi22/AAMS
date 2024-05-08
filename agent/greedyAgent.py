@@ -11,15 +11,14 @@ DOWN, LEFT, UP, RIGHT, STAY = range(N_ACTIONS)
 class GreedyAgent(BasicAgent):
 
   def __init__(self, agentId):
-    super(GreedyAgent, self).__init__(f"Greedy Agent")
-    self.agentId = agentId
+    super(GreedyAgent, self).__init__(agentId, f"Greedy Agent")
     self.nActions = N_ACTIONS
 
   def action(self) -> int:
     agents = self.obsInfo_[0]
     foods = self.obsInfo_[1]
 
-    agentPosition_pos = agents[self.agentId]
+    agentPosition_pos = agents[self.agentId_]
     foodPositions =  list(foods.values())
 
     closestFoodPos = self.closestFood(agentPosition_pos, foodPositions)
