@@ -54,7 +54,7 @@ class Game(gym.Env):
     self.np_random, seed = seeding.np_random(n)
     return [seed]
   
-  def reset(self, nFoods = 20):
+  def reset(self, nFoods = 20, pattern = []):
     # Game Args
     self.stepCount_ = 0
     self.nFoods_ = nFoods
@@ -66,7 +66,10 @@ class Game(gym.Env):
     self.agentDones_ = {id:False for id in range(self.nAgents_)}
 
     # Game Map View
-    self.__init_full_obs()
+    if pattern:
+      self.__init_full_obs_pattern(pattern)
+    else:
+      self.__init_full_obs()
 
     return [self.get_agent_obs(agentId) for agentId in range(0, self.nAgents_)], [self.agentPos_, self.foodPos_]
 
@@ -112,6 +115,33 @@ class Game(gym.Env):
     env[2][row][col] = self.d['player'][2]
     
     return env
+
+  def __init_full_obs_pattern(self, pat: list):
+    self.fullObs_ = self.__create_grid()
+
+    for agent_i in range(self.nAgents_):
+      pos = [-1, -1]
+      while not self._is_cell_vacant(pos):
+        pos = [self.np_random.randint(0, self.gridShape_[0] - 1),
+                self.np_random.randint(0, self.gridShape_[1] - 1)]
+      self.agentPos_[agent_i] = pos
+      # Add the agent to the grid
+      self.__update_agent_view(agent_i)
+
+    for food_i in range(self.nFoods_):
+      pos = [-1, -1]
+      while not self._is_cell_vacant(pos):
+        pos = [self.np_random.randint(0, self.gridShape_[0] - 1),
+                self.np_random.randint(0, self.gridShape_[1] - 1)]
+        
+        ran = self.np_random.uniform(0, 1)
+
+        if (ran < pat[pos[0]][pos[1]]):
+          self.foodPos_[food_i] = pos
+        else:
+          pos = [-1, -1]
+      # Add the food to the grid
+      self.__update_food_view(food_i)
 
   def __init_full_obs(self):
     self.fullObs_ = self.__create_grid()

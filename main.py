@@ -2,18 +2,19 @@ import numpy as np
 from gym import Env
 from typing import Sequence
 import argparse
-
 import torch
-from agent.basicAgent import BasicAgent
-from agent.greedyDqnAgent import GreedyDQNAgent
 from utils import plot
 from game import Game
 import time
 
-EPSILON_DECAY = 0.99998
+from agent.basicAgent import BasicAgent
+from agent.greedyDqnAgent import GreedyDQNAgent
+from mapGen import map1
+
+EPSILON_DECAY = 0.9999
 MIN_EPSILON = 0.005
 
-def train_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: int) -> np.ndarray:
+def train_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: int, pat: list) -> np.ndarray:
   epsilon = 1
   ep_rewards = []
   gridShape = env.getGridShape()
@@ -24,7 +25,7 @@ def train_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: in
     step = 0
     terminals = [False for _ in range(len(agents))]
     ep_reward = np.zeros(len(agents))
-    obs, info = env.reset(n_foods)
+    obs, info = env.reset(n_foods, pat)
     #env.render()
 
     for observation, agent in zip(obs, agents):
@@ -69,7 +70,7 @@ def train_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: in
 
   return [rewards.tolist() for rewards in ep_rewards]
 
-def run_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: int) -> np.ndarray:
+def run_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: int, pat: list) -> np.ndarray:
   results = np.zeros(n_eps)
   ep_rewards = []
   gridShape = env.getGridShape()
@@ -78,7 +79,7 @@ def run_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: int)
     step = 0
     terminals = [False for _ in range(len(agents))]
     ep_reward = np.zeros(len(agents))
-    obs, info = env.reset(n_foods)
+    obs, info = env.reset(n_foods, pat)
     env.render()
 
     for observation, agent in zip(obs, agents):
@@ -138,14 +139,16 @@ if __name__ == '__main__':
     for agent in agents:
       agent.load()
   
+  pat = map1()
+
   # 4 - Evaluate agent
   results = {}
   if opt.train:
     print("training!!!")
-    result = train_multi_agent(env, agents, opt.foods, opt.episodes)
+    result = train_multi_agent(env, agents, opt.foods, opt.episodes, pat)
   else:
     print("testing!!!")
-    result = run_multi_agent(env, agents, opt.foods, opt.episodes)
+    result = run_multi_agent(env, agents, opt.foods, opt.episodes, pat)
   results['agent1'] = result
 
   # 5 - Compare results
