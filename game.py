@@ -13,7 +13,7 @@ from gym.utils import seeding
 from ma_gym.envs.utils.draw import draw_grid, fill_cell, draw_circle, write_cell_text
 
 class Game(gym.Env):
-  d = {'player': (255, 175, 0),
+  d = {'player': (255, 0, 0),
         'food': (0, 255, 0),
         'enemy': (0, 0, 255)}
   
@@ -45,7 +45,7 @@ class Game(gym.Env):
     self.fullObs_ = self.__create_grid()
     self.viewer_ = None
 
-    self.seed(0)
+    self.seed()
 
   def getGridShape(self):
     return self.gridShape_
@@ -66,7 +66,7 @@ class Game(gym.Env):
     self.agentDones_ = {id:False for id in range(self.nAgents_)}
 
     # Game Map View
-    if pattern:
+    if len(pattern):
       self.__init_full_obs_pattern(pattern)
     else:
       self.__init_full_obs()

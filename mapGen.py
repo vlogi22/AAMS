@@ -33,12 +33,12 @@ def map1() -> list:
 
 def map2() -> list:
   map = createMap(50, 50)
-  map = createMapPatternCircle(25, 25, 50, 0.1, 0.9, map)
+  map = createMapPatternCircle(25, 25, 50, 0.05, 0.9, map)
   
-  map = createMapPatternCircle(0, 0, 5, 0.5, 0.8, map)
-  map = createMapPatternCircle(0, 49, 5, 0.5, 0.8, map)
-  map = createMapPatternCircle(49, 0, 5, 0.5, 0.8, map)
-  map = createMapPatternCircle(49, 49, 5, 0.5, 0.8, map)
+  map = createMapPatternCircle(3, 3, 5, 0.5, 0.8, map)
+  map = createMapPatternCircle(0, 47, 5, 0.5, 0.8, map)
+  map = createMapPatternCircle(47, 0, 5, 0.5, 0.8, map)
+  map = createMapPatternCircle(47, 47, 5, 0.5, 0.8, map)
 
   return map
 

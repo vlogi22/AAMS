@@ -9,7 +9,7 @@ import time
 
 from agent.basicAgent import BasicAgent
 from agent.greedyDqnAgent import GreedyDQNAgent
-from mapGen import map1
+import mapGen
 
 EPSILON_DECAY = 0.9999
 MIN_EPSILON = 0.005
@@ -20,7 +20,7 @@ def train_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: in
   gridShape = env.getGridShape()
 
   for ep in range(n_eps):
-    if not (ep % 500):
+    if not (ep % 1000):
       print("ep: ", ep, "epsilon", epsilon)
     step = 0
     terminals = [False for _ in range(len(agents))]
@@ -59,7 +59,7 @@ def train_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: in
       agent.train(all(terminals), step)
       
     # Append episode reward to a list and log stats (every given number of episodes)
-    ep_rewards.append(ep_reward)
+    ep_rewards.append(np.mean(ep_reward))
 
     # Decay epsilon
     if epsilon > MIN_EPSILON:
@@ -97,7 +97,7 @@ def run_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: int,
       newObs, info, rewards, terminals = env.step(moveActions)
 
       env.render()
-      #time.sleep(0.1)
+      time.sleep(0.1)
       ep_reward += rewards
       obs = newObs
       
@@ -128,18 +128,20 @@ if __name__ == '__main__':
   env = Game(
     gridShape=(50, 50),
     nAgents=opt.agents, nFoods=opt.foods,
-    maxSteps=200
+    foodCaptureReward=3, maxSteps=15
   )
 
   # 2 - Setup agent
-  agents = [GreedyDQNAgent(agentId=id, nSpawns=50*50) for id in range(0, opt.agents)]
+  agents = [GreedyDQNAgent(agentId=id, nSpawns=50*50, device=DEVICE) for id in range(0, opt.agents)]
   
   # 3 - Setup agent
   if opt.load:
-    for agent in agents:
-      agent.load()
+    for id, agent in enumerate(agents):
+      agent.load(f"{id}")
   
-  pat = map1()
+  #pat = []
+  #pat = mapGen.map1()
+  pat = mapGen.map2()
 
   # 4 - Evaluate agent
   results = {}
@@ -157,7 +159,7 @@ if __name__ == '__main__':
   # 6 - Save model
   if opt.save:
     for id, agent in enumerate(agents):
-      agent.save()
+      agent.save(f"{id}")
 
   
   
