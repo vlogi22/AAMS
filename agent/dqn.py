@@ -6,10 +6,10 @@ from collections import deque
 import random
 import os
 
-MIN_REPLAY_MEMORY_SIZE = 512
-REPLAY_MEMORY_SIZE = 16_384 # 2^14
+MIN_REPLAY_MEMORY_SIZE = 256
+REPLAY_MEMORY_SIZE = 4_096 # 2^14
 MINIBATCH_SIZE = 64
-UPDATE_TARGET_EVERY = 4
+UPDATE_TARGET_EVERY = 64
 DISCOUNT = 0.95
 
 class MLP(nn.Module):
@@ -20,25 +20,25 @@ class MLP(nn.Module):
     self.conv_ = nn.Sequential(
       # shape = [Batch_size, 3, 50, 50]
       # formula = lowerBound[(50 - kernel)/stride + 1]
-      nn.Conv2d(in_channels=3, out_channels=16, kernel_size=(6, 6), stride=3),
-      nn.ReLU(), # shape = [Batch_size, 16, 15, 15]
+      nn.Conv2d(in_channels=3, out_channels=16, kernel_size=(4, 4), stride=2),
+      nn.ReLU(), # shape = [Batch_size, 16, 24, 24]
       nn.Dropout(p=dropout),
 
-      nn.Conv2d(in_channels=16, out_channels=32, kernel_size=(4, 4), stride=2),
-      nn.ReLU(), # shape = [Batch_size, 32, 6, 6]
+      nn.Conv2d(in_channels=16, out_channels=32, kernel_size=(3, 3), stride=2),
+      nn.ReLU(), # shape = [Batch_size, 32, 11, 11]
       nn.Dropout(p=dropout),
 
       nn.Conv2d(in_channels=32, out_channels=64, kernel_size=(2, 2), stride=1),
-      nn.ReLU(), # shape = [Batch_size, 64, 5, 5]
+      nn.ReLU(), # shape = [Batch_size, 64, 10, 10]
       nn.Dropout(p=dropout),
     )
 
     self.net_ = nn.Sequential(
-      nn.Linear(64*5*5, 256),
+      nn.Linear(64*10*10, 2048),
       nn.ReLU(),
       nn.Dropout(p=dropout),
 
-      nn.Linear(256, outputLayer)
+      nn.Linear(2048, outputLayer)
     )
 
   def forward(self, x: torch.Tensor):
@@ -123,14 +123,11 @@ class DQN():
                 'model_state_dict': self.model_.state_dict(),
                 'optimizer_state_dict': self.optimizer_.state_dict(),
                 }, file_name)
-    
-    for param_tensor in self.model_.state_dict():
-      print(param_tensor, "\t", self.model_.state_dict()[param_tensor].size())
 
   def load(self, file_name='model.pth'):
     model_folder_path = './model'
     if not os.path.exists(model_folder_path):
-      print(" > No model found, initializing a default one")
+      print(" > No model found, initializing a random one")
       return
     file_name = os.path.join(model_folder_path, file_name)
 
