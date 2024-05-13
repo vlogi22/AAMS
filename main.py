@@ -11,7 +11,7 @@ from agent.basicAgent import BasicAgent
 from agent.greedyDqnAgent import GreedyDQNAgent
 import mapGen
 
-EPSILON_DECAY = 0.9999
+EPSILON_DECAY = 0.99975
 MIN_EPSILON = 0.005
 
 def train_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: int, pat: list) -> np.ndarray:
@@ -25,7 +25,8 @@ def train_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: in
     step = 0
     terminals = [False for _ in range(len(agents))]
     ep_reward = np.zeros(len(agents))
-    obs, info = env.reset(n_foods, pat)
+
+    obs, info = env.reset(n_foods, pat[np.random.randint(0, len(pat))])
     #env.render()
 
     for observation, agent in zip(obs, agents):
@@ -38,8 +39,7 @@ def train_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: in
       spawnActions = [np.random.randint(0, gridShape[0]*gridShape[1]) for _ in agents]
       spawnPos = [[act//gridShape[0], act%gridShape[1]] for act in spawnActions]
     
-    for agent, pos in zip(agents, spawnPos):
-      env.spawn(agent, pos)
+    ep_reward += np.array([env.spawn(agent, pos) for agent, pos in zip(agents, spawnPos)])
 
     newObs = [env.get_agent_obs(agent.id()) for agent in agents]
 
@@ -79,7 +79,7 @@ def run_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: int,
     step = 0
     terminals = [False for _ in range(len(agents))]
     ep_reward = np.zeros(len(agents))
-    obs, info = env.reset(n_foods, pat)
+    obs, info = env.reset(n_foods, pat[np.random.randint(0, len(pat))])
     env.render()
 
     for observation, agent in zip(obs, agents):
@@ -87,8 +87,7 @@ def run_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: int,
     spawnActions = [agent.spawnAction() for agent in agents]
     spawnPos = [[act//gridShape[0], act%gridShape[1]] for act in spawnActions]
 
-    for agent, pos in zip(agents, spawnPos):
-      env.spawn(agent, pos)
+    ep_reward += np.array([env.spawn(agent, pos) for agent, pos in zip(agents, spawnPos)])
   
     while not all(terminals):
       step += 1
@@ -128,7 +127,7 @@ if __name__ == '__main__':
   env = Game(
     gridShape=(50, 50),
     nAgents=opt.agents, nFoods=opt.foods,
-    foodCaptureReward=3, maxSteps=15
+    foodCaptureReward=5, maxSteps=15
   )
 
   # 2 - Setup agent
@@ -139,9 +138,7 @@ if __name__ == '__main__':
     for id, agent in enumerate(agents):
       agent.load(f"{id}")
   
-  #pat = []
-  #pat = mapGen.map1()
-  pat = mapGen.map2()
+  pat = [mapGen.map2()]
 
   # 4 - Evaluate agent
   results = {}
@@ -160,7 +157,3 @@ if __name__ == '__main__':
   if opt.save:
     for id, agent in enumerate(agents):
       agent.save(f"{id}")
-
-  
-  
-

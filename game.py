@@ -74,8 +74,10 @@ class Game(gym.Env):
     return [self.get_agent_obs(agentId) for agentId in range(0, self.nAgents_)], [self.agentPos_, self.foodPos_]
 
   def spawn(self, agent, pos):
+    reward = abs(self.agentPos_[agent.id()][0] - pos[0]) + abs(self.agentPos_[agent.id()][1] - pos[1])
     self.agentPos_[agent.id()] = pos
     self.__update_agent_view(agent.id())
+    return -reward/4
 
   def step(self, agents_action):
     self.stepCount_ += 1
