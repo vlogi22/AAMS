@@ -5,8 +5,8 @@ from agent.dqn import DQN
 
 class DQNAgent(BasicAgent):
 
-  def __init__(self, agentId, nSpawns, name, device: str = "cpu"):
-    super(DQNAgent, self).__init__(agentId, name)
+  def __init__(self, agentId, nSpawns, name, strength: float = 0.5, maxEnergy: float = 20, device: str = "cpu"):
+    super(DQNAgent, self).__init__(agentId, name, strength, maxEnergy)
     self.device_ = device
     self.nSpawns_ = nSpawns
     self.brain_ = DQN(outputLayer = nSpawns, device=device)

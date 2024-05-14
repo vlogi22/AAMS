@@ -10,11 +10,15 @@ DOWN, LEFT, UP, RIGHT, STAY = range(MOVES)
 
 class GreedyDQNAgent(DQNAgent):
 
-  def __init__(self, agentId: int, nSpawns: int, device: str = "cpu"):
-    super(GreedyDQNAgent, self).__init__(agentId, nSpawns, f"Greedy DQN Agent", device)
-    self.nMoves = MOVES
+  def __init__(self, agentId: int, strength: float, maxEnergy: float, nSpawns: int, device: str = "cpu"):
+    super(GreedyDQNAgent, self).__init__(agentId, nSpawns, f"Greedy DQN Agent", strength, maxEnergy, device)
+    self.nMoves_ = MOVES
+    self.moveCost_ = strength*4
 
   def moveAction(self) -> int:
+    if (not self.canMove()):
+      return STAY
+    
     agents = self.obsInfo_[0]
     foods = self.obsInfo_[1]
 
@@ -22,10 +26,14 @@ class GreedyDQNAgent(DQNAgent):
     foodPositions =  list(foods.values())
 
     closestFoodPos = self.closestFood(agentPosition_pos, foodPositions)
-    if closestFoodPos is not None: 
+    if closestFoodPos is not None:
+      self.energy_ -= self.moveCost_
       return self.directionToGo(agentPosition_pos, closestFoodPos)
     else:
       return STAY
+    
+  def canMove(self):
+    return self.energy_ >= self.moveCost_
 
   def directionToGo(self, agentPosition, foodPosition):
     """

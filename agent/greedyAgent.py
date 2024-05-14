@@ -10,8 +10,8 @@ DOWN, LEFT, UP, RIGHT, STAY = range(N_ACTIONS)
 
 class GreedyAgent(BasicAgent):
 
-  def __init__(self, agentId):
-    super(GreedyAgent, self).__init__(agentId, f"Greedy Agent")
+  def __init__(self, agentId, strength: float = 0.5, maxEnergy: float = 20):
+    super(GreedyAgent, self).__init__(agentId, f"Greedy Agent", strength, maxEnergy)
     self.nActions = N_ACTIONS
 
   def action(self) -> int:

@@ -11,7 +11,7 @@ from agent.basicAgent import BasicAgent
 from agent.greedyDqnAgent import GreedyDQNAgent
 import mapGen
 
-EPSILON_DECAY = 0.99975
+EPSILON_DECAY = 0.9998
 MIN_EPSILON = 0.005
 
 def train_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: int, pat: list) -> np.ndarray:
@@ -43,10 +43,13 @@ def train_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: in
 
     newObs = [env.get_agent_obs(agent.id()) for agent in agents]
 
+    for agent in agents:
+      agent.resetEnergy()
+
     while not all(terminals):
       step += 1
 
-      moveActions = [agent.moveAction() for agent in agents]
+      moveActions = {agent.id(): agent.moveAction() for agent in agents}
       _, info, rewards, terminals = env.step(moveActions)
       #env.render()
       #time.sleep(0.1)
@@ -88,11 +91,14 @@ def run_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: int,
     spawnPos = [[act//gridShape[0], act%gridShape[1]] for act in spawnActions]
 
     ep_reward += np.array([env.spawn(agent, pos) for agent, pos in zip(agents, spawnPos)])
-  
+
+    for agent in agents:
+      agent.resetEnergy()
+      
     while not all(terminals):
       step += 1
 
-      moveActions = [agent.moveAction() for agent in agents]
+      moveActions = {agent.id(): agent.moveAction() for agent in agents}
       newObs, info, rewards, terminals = env.step(moveActions)
 
       env.render()
