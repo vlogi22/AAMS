@@ -18,27 +18,23 @@ class MLP(nn.Module):
     super(MLP, self).__init__()
 
     self.conv_ = nn.Sequential(
-      # shape = [Batch_size, 3, 50, 50]
-      # formula = lowerBound[(50 - kernel)/stride + 1]
+      # shape = [Batch_size, 3, 30, 30]
+      # formula = lowerBound[(30 - kernel)/stride + 1]
       nn.Conv2d(in_channels=3, out_channels=16, kernel_size=(4, 4), stride=2),
-      nn.ReLU(), # shape = [Batch_size, 16, 24, 24]
+      nn.ReLU(), # shape = [Batch_size, 16, 14, 14]
       nn.Dropout(p=dropout),
 
-      nn.Conv2d(in_channels=16, out_channels=32, kernel_size=(3, 3), stride=2),
-      nn.ReLU(), # shape = [Batch_size, 32, 11, 11]
-      nn.Dropout(p=dropout),
-
-      nn.Conv2d(in_channels=32, out_channels=64, kernel_size=(2, 2), stride=1),
-      nn.ReLU(), # shape = [Batch_size, 64, 10, 10]
+      nn.Conv2d(in_channels=16, out_channels=32, kernel_size=(2, 2), stride=1),
+      nn.ReLU(), # shape = [Batch_size, 32, 13, 13]
       nn.Dropout(p=dropout),
     )
 
     self.net_ = nn.Sequential(
-      nn.Linear(64*10*10, 2048),
+      nn.Linear(32*13*13, 2_048),
       nn.ReLU(),
       nn.Dropout(p=dropout),
 
-      nn.Linear(2048, outputLayer)
+      nn.Linear(2_048, outputLayer)
     )
 
   def forward(self, x: torch.Tensor):

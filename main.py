@@ -129,22 +129,25 @@ if __name__ == '__main__':
   DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
   print(f"Using {DEVICE} |", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "")
 
+
   # 1 - Setup environment
   env = Game(
-    gridShape=(50, 50),
-    nAgents=opt.agents, nFoods=opt.foods,
-    foodCaptureReward=5, maxSteps=15
+    gridShape=(30, 30), 
+    nFoods=opt.foods,
+    foodCaptureReward=4, maxSteps=10
   )
 
   # 2 - Setup agent
-  agents = [GreedyDQNAgent(agentId=id, nSpawns=50*50, device=DEVICE) for id in range(0, opt.agents)]
-  
+  agents = [GreedyDQNAgent(agentId=id, nSpawns=30*30, strengh=0.5, maxEnergy=20, device=DEVICE) for id in range(0, opt.agents)]
+  for agent in agents:
+    env.addAgent(agent.id(), agent)
+
   # 3 - Setup agent
   if opt.load:
     for id, agent in enumerate(agents):
       agent.load(f"{id}")
   
-  pat = [mapGen.map2()]
+  pat = [mapGen.map2(30, 30)]
 
   # 4 - Evaluate agent
   results = {}
@@ -157,7 +160,7 @@ if __name__ == '__main__':
   results['agent1'] = result
 
   # 5 - Compare results
-  plot(opt.episodes, result, image=opt.image, colors=["orange"])
+  plot(opt.episodes, result, ylim=(-20, 20), image=opt.image, colors=["orange"])
 
   # 6 - Save model
   if opt.save:
