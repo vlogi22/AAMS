@@ -19,12 +19,12 @@ class Game(gym.Env):
   
   metadata = {'render.modes': ['human', 'rgb_array']}
 
-  def __init__(self, gridShape=(10, 10), nAgents=1, nFoods=1,
+  def __init__(self, gridShape=(10, 10), nFoods=1,
               penalty=-2, stepCost=-1, foodCaptureReward=5, maxSteps=100):
     
     # Game Args
     self.gridShape_ = gridShape
-    self.nAgents_ = nAgents
+    self.nAgents_ = 0
     self.nFoods_ = nFoods
     self.maxSteps_ = maxSteps
     self.stepCount_ = 0
@@ -35,10 +35,10 @@ class Game(gym.Env):
     self.foodCaptureReward_ = foodCaptureReward
 
     # Game objects
-    self.foodPos_ = {id:None for id in range(self.nFoods_)}
-
-    self.agentPos_ = {id:None for id in range(self.nAgents_)}
-    self.agentDones_ = {id:False for id in range(self.nAgents_)}
+    self.foodPos_ = {}
+    self.agentPos_ = {}
+    self.agents_ = {}
+    self.agentDones_ = {}
 
     # Game Map View
     self.baseGrid_ = self.__create_grid()  # with no agents
@@ -60,10 +60,9 @@ class Game(gym.Env):
     self.nFoods_ = nFoods
 
     # Scores
-    self.foodPos_ = {id:None for id in range(self.nFoods_)}
-
-    self.agentPos_ = {id:None for id in range(self.nAgents_)}
-    self.agentDones_ = {id:False for id in range(self.nAgents_)}
+    self.foodPos_ = {}
+    self.agentPos_ = {}
+    self.agentDones_ = {}
 
     # Game Map View
     if len(pattern):
@@ -72,21 +71,31 @@ class Game(gym.Env):
       self.__init_full_obs()
 
     return [self.get_agent_obs(agentId) for agentId in range(0, self.nAgents_)], [self.agentPos_, self.foodPos_]
+  
+  def getAgent(self, agentId: int):
+    return self.agents_[agentId]
+
+  def addAgent(self, agentId: int, agent):
+    self.agents_[agentId] = agent
+    self.nAgents_ += 1
 
   def spawn(self, agent, pos):
     reward = abs(self.agentPos_[agent.id()][0] - pos[0]) + abs(self.agentPos_[agent.id()][1] - pos[1])
     self.agentPos_[agent.id()] = pos
     self.__update_agent_view(agent.id())
     return -reward/4
-
-  def step(self, agents_action):
+  
+  def step(self, agents_action: dict):
     self.stepCount_ += 1
     rewards = [self.stepCost_ for _ in range(self.nAgents_)]
 
-    for agent_i, action in enumerate(agents_action):
+    for agent_i, action in agents_action.items():
       if not (self.agentDones_[agent_i]):
         # After a move, it will return a additional reward value if something happen
         rewards[agent_i] += self.__update_agent_pos(agent_i, action)
+
+    for agent_i, agent in self.agents_.items():
+      self.agentDones_[agent.id()] = not agent.canMove()
 
     if (self.stepCount_ >= self.maxSteps_) or (not self.foodPos_):
       for i in range(self.nAgents_):
@@ -121,7 +130,7 @@ class Game(gym.Env):
   def __init_full_obs_pattern(self, pat: list):
     self.fullObs_ = self.__create_grid()
 
-    for agent_i in range(self.nAgents_):
+    for agent_i, _ in self.agents_.items():
       pos = [-1, -1]
       while not self._is_cell_vacant(pos):
         pos = [self.np_random.randint(0, self.gridShape_[0] - 1),
@@ -129,6 +138,7 @@ class Game(gym.Env):
       self.agentPos_[agent_i] = pos
       # Add the agent to the grid
       self.__update_agent_view(agent_i)
+    self.agentDones_ = {agent_i:False for agent_i, _ in self.agents_.items()}
 
     for food_i in range(self.nFoods_):
       pos = [-1, -1]
@@ -148,7 +158,7 @@ class Game(gym.Env):
   def __init_full_obs(self):
     self.fullObs_ = self.__create_grid()
 
-    for agent_i in range(self.nAgents_):
+    for agent_i, _ in self.agents_.items():
       pos = [-1, -1]
       while not self._is_cell_vacant(pos):
         pos = [self.np_random.randint(0, self.gridShape_[0] - 1),
@@ -156,6 +166,7 @@ class Game(gym.Env):
       self.agentPos_[agent_i] = pos
       # Add the agent to the grid
       self.__update_agent_view(agent_i)
+    self.agentDones_ = {agent_i:False for agent_i, _ in self.agents_.items()}
 
     for food_i in range(self.nFoods_):
       pos = [-1, -1]
