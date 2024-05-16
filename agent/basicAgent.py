@@ -1,6 +1,10 @@
 import numpy as np
 from abc import ABC
 
+R = 0
+G = 0
+B = 100
+
 class BasicAgent(ABC):
 
   def __init__(self, agentId: int, name: str, strength: float = 0.5, maxEnergy: float = 20):
@@ -33,3 +37,6 @@ class BasicAgent(ABC):
 
   def strength(self) -> float:
     return self.strength_
+  
+  def rgbArray(self) -> tuple:
+    return (R + int(255*self.strength_), G, B)

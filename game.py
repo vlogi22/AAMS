@@ -105,7 +105,7 @@ class Game(gym.Env):
               [self.agentPos_, self.foodPos_], rewards, self.agentDones_.values()
 
   def get_agent_obs(self, agentId):
-    env = np.zeros((3, self.gridShape_[0], self.gridShape_[1]), dtype=np.float32)  # starts an rbg of our size
+    env = np.zeros((3, self.gridShape_[0], self.gridShape_[1]), dtype=np.float32)
     
     for _, [row, col] in self.foodPos_.items():
       # sets the food location tile to it's color
@@ -113,17 +113,19 @@ class Game(gym.Env):
       env[1][row][col] = self.d['food'][1]
       env[2][row][col] = self.d['food'][2]
 
-    for _, [row, col] in self.agentPos_.items():
+    for id, [row, col] in self.agentPos_.items():
+      rgb = self.agents_[id].rgbArray()
       # sets the enemy location tile to it's color
-      env[0][row][col] = self.d['enemy'][0]
-      env[1][row][col] = self.d['enemy'][1]
-      env[2][row][col] = self.d['enemy'][2]
+      env[0][row][col] = rgb[0]
+      env[1][row][col] = rgb[1]
+      env[2][row][col] = rgb[2]
 
     # sets the player location tile to it's color
+    rgb = self.agents_[agentId].rgbArray()
     [row, col] = self.agentPos_[agentId]
-    env[0][row][col] = self.d['player'][0]
-    env[1][row][col] = self.d['player'][1]
-    env[2][row][col] = self.d['player'][2]
+    env[0][row][col] = rgb[0]
+    env[1][row][col] = rgb[1]
+    env[2][row][col] = rgb[2] + 100
     
     return env
 
@@ -247,14 +249,15 @@ class Game(gym.Env):
   def render(self, mode='human'):
     img = draw_grid(self.gridShape_[0], self.gridShape_[1], cell_size=CELL_SIZE, fill='white')
 
-    for agent_i in self.agentPos_.keys():
-      draw_circle(img, self.agentPos_[agent_i], cell_size=CELL_SIZE, fill=AGENT_COLOR)
-      write_cell_text(img, text=str(agent_i), pos=self.agentPos_[agent_i], cell_size=CELL_SIZE,
+    for agent_i, pos in self.agentPos_.items():
+      agentRGB = self.agents_[agent_i].rgbArray()
+      draw_circle(img, pos, cell_size=CELL_SIZE, fill=agentRGB)
+      write_cell_text(img, text=str(agent_i), pos=pos, cell_size=CELL_SIZE,
                       fill='white', margin=0.4)
 
-    for food_i in self.foodPos_.keys():
-      draw_circle(img, self.foodPos_[food_i], cell_size=CELL_SIZE, fill=FOOD_COLOR)
-      write_cell_text(img, text=str(food_i), pos=self.foodPos_[food_i], cell_size=CELL_SIZE,
+    for food_i, pos in self.foodPos_.items():
+      draw_circle(img, pos, cell_size=CELL_SIZE, fill=FOOD_COLOR)
+      write_cell_text(img, text=str(food_i), pos=pos, cell_size=CELL_SIZE,
                       fill='white', margin=0.4)
 
     img = np.asarray(img)
@@ -273,8 +276,7 @@ class Game(gym.Env):
       self.viewer_ = None
 
 
-AGENT_COLOR = ImageColor.getcolor('blue', mode='RGB')
-FOOD_COLOR = 'red'
+FOOD_COLOR = (0, 255, 0)
 
 CELL_SIZE = 35
 
