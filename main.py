@@ -7,6 +7,7 @@ from utils import plot
 from game import Game
 import time
 
+from agent.gameAgentFactory import GameAgentFactory
 from agent.basicAgent import BasicAgent
 from agent.greedyDqnAgent import GreedyDQNAgent
 import mapGen
@@ -138,14 +139,15 @@ if __name__ == '__main__':
   )
 
   # 2 - Setup agent
-  agents = [GreedyDQNAgent(agentId=id, nSpawns=30*30, strengh=0.5, maxEnergy=20, device=DEVICE) for id in range(0, opt.agents)]
+  factory = GameAgentFactory()
+  agents = [factory.createGreedyDqnAgent(maxEnergy=20, nSpawns=30*30, device=DEVICE) for _ in range(0, opt.agents)]
   for agent in agents:
     env.addAgent(agent.id(), agent)
 
   # 3 - Setup agent
   if opt.load:
-    for id, agent in enumerate(agents):
-      agent.load(f"{id}")
+    for agent in agents:
+      agent.load(f"{agent.id()}")
   
   pat = [mapGen.map2(30, 30)]
 
@@ -164,5 +166,5 @@ if __name__ == '__main__':
 
   # 6 - Save model
   if opt.save:
-    for id, agent in enumerate(agents):
-      agent.save(f"{id}")
+    for agent in agents:
+      agent.save(f"{agent.id()}")
