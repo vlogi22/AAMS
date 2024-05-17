@@ -42,7 +42,7 @@ class Game(gym.Env):
 
     # Game Map View
     self.baseGrid_ = self.__create_grid()  # with no agents
-    self.fullObs_ = self.__create_grid()
+    self.fullObs_ = [[{PRE_IDS['agent']: [], PRE_IDS['food']: []} for _ in range(self.gridShape_[1])] for _ in range(self.gridShape_[0])]
     self.viewer_ = None
 
     self.seed()
@@ -93,6 +93,8 @@ class Game(gym.Env):
       if not (self.agentDones_[agent_i]):
         # After a move, it will return a additional reward value if something happen
         rewards[agent_i] += self.__update_agent_pos(agent_i, action)
+        
+    rewards = self.__check_colisions(rewards)
 
     for agent_i, agent in self.agents_.items():
       self.agentDones_[agent.id()] = not agent.canMove()
@@ -130,7 +132,7 @@ class Game(gym.Env):
     return env
 
   def __init_full_obs_pattern(self, pat: list):
-    self.fullObs_ = self.__create_grid()
+    self.fullObs_ = [[{PRE_IDS['agent']: [], PRE_IDS['food']: []} for _ in range(self.gridShape_[1])] for _ in range(self.gridShape_[0])]
 
     for agent_i, _ in self.agents_.items():
       pos = [-1, -1]
@@ -158,7 +160,7 @@ class Game(gym.Env):
       self.__update_food_view(food_i)
 
   def __init_full_obs(self):
-    self.fullObs_ = self.__create_grid()
+    self.fullObs_ = [[{PRE_IDS['agent']: [], PRE_IDS['food']: []} for _ in range(self.gridShape_[1])] for _ in range(self.gridShape_[0])]
 
     for agent_i, _ in self.agents_.items():
       pos = [-1, -1]
@@ -183,7 +185,7 @@ class Game(gym.Env):
     return (0 <= pos[0] < self.gridShape_[0]) and (0 <= pos[1] < self.gridShape_[1])
 
   def _is_cell_vacant(self, pos):
-    return self.is_valid(pos) and (self.fullObs_[pos[0]][pos[1]] == PRE_IDS['empty'])
+    return self.is_valid(pos) and (len(self.fullObs_[pos[0]][pos[1]][PRE_IDS['agent']]) == 0) and (len(self.fullObs_[pos[0]][pos[1]][PRE_IDS['food']]) == 0)
 
 #
 # Grid
@@ -194,38 +196,51 @@ class Game(gym.Env):
   
   def __update_agent_view(self, agent_i):
     [row, col] = self.agentPos_[agent_i]
-    self.fullObs_[row][col] = PRE_IDS['agent'] + str(agent_i)
+    self.fullObs_[row][col][PRE_IDS['agent']].append(agent_i)
 
   def __update_food_view(self, food_i):
     [row, col] = self.foodPos_[food_i]
-    self.fullObs_[row][col] = PRE_IDS['food'] + str(food_i)
+    self.fullObs_[row][col][PRE_IDS['food']].append(food_i)
 
   def __update_agent_pos(self, agentId, move):
     curr_pos = copy.copy(self.agentPos_[agentId])
     next_pos = self.__next_pos(curr_pos, move)
 
     reward = 0
-    foodId = -1
     
-    if self._is_cell_vacant(next_pos):
+    if self.is_valid(next_pos):
       self.agentPos_[agentId] = next_pos
-      self.fullObs_[curr_pos[0]][curr_pos[1]] = PRE_IDS['empty']
+      self.fullObs_[curr_pos[0]][curr_pos[1]][PRE_IDS['agent']].remove(agentId)
       self.__update_agent_view(agentId)
-    elif self.is_valid(next_pos):
-      # Check colisions
-      self.agentPos_[agentId] = next_pos
-      for id, pos in self.foodPos_.items():
-         if pos == next_pos:
-            foodId = id
-            reward += self.foodCaptureReward_
     else:
        # An invalid move, i.e., out of bound.
        reward += self.penalty_
 
-    if foodId != -1:
-      self.nFoods_ -= 1
-      self.foodPos_.pop(foodId)
     return reward
+  
+  def __check_colisions(self, rewards):
+    for x in range(self.gridShape_[0]):
+        for y in range(self.gridShape_[1]):
+          agents_at_position = self.fullObs_[x][y][self.PRE_IDS['agent']]
+          foods_at_position = self.fullObs_[x][y][self.PRE_IDS['food']]
+          
+          if len(foods_at_position) > 0:
+            if len(agents_at_position) == 1:
+              rewards[agents_at_position[0]] += self.foodCaptureReward_
+              self.foodPos_.pop(foods_at_position[0])
+              self.fullObs_[x][y][PRE_IDS['food']].remove(foods_at_position[0])
+              
+            elif len(agents_at_position) > 1:
+              total_strength = sum([self.agents_[agent_id].strength() for agent_id in agents_at_position])
+              reward_probabilities = [self.agents_[agent_id].strength() / total_strength for agent_id in agents_at_position]
+              chosen_agent_id = random.choices(agents_at_position, weights=reward_probabilities)[0]
+              rewards[chosen_agent_id] += self.foodCaptureReward_
+              self.foodPos_.pop(foods_at_position[0])
+              self.fullObs_[x][y][PRE_IDS['food']].remove(foods_at_position[0])
+    
+    return rewards
+              
+    
 
   def __next_pos(self, curr_pos, move):
     if move == 0:  # down
