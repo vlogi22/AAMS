@@ -31,7 +31,7 @@ def train_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int,
 
     step = 0
     terminals = [False for _ in range(len(agents))]
-    ep_reward = np.zeros(len(agents))
+    ep_reward = np.array([SPAWN_PENALTY for _ in range(len(agents))], dtype=np.float32)
 
     obs, info = env.reset(n_foods, pat[np.random.randint(0, len(pat))])
     #env.render()
