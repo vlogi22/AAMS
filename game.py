@@ -80,9 +80,9 @@ class Game(gym.Env):
     self.nAgents_ += 1
 
   def spawn(self, agent, pos):
-    reward = abs(self.agentPos_[agent.id()][0] - pos[0]) + abs(self.agentPos_[agent.id()][1] - pos[1])
-    self.agentPos_[agent.id()] = pos
-    self.__update_agent_view(agent.id())
+    reward = abs(self.agentPos_[agent.getId()][0] - pos[0]) + abs(self.agentPos_[agent.getId()][1] - pos[1])
+    self.agentPos_[agent.getId()] = pos
+    self.__update_agent_view(agent.getId())
     return -reward/4
   
   def step(self, agents_action: dict):
@@ -97,7 +97,7 @@ class Game(gym.Env):
     rewards = self.__check_colisions(rewards)
 
     for agent_i, agent in self.agents_.items():
-      self.agentDones_[agent.id()] = not agent.canMove()
+      self.agentDones_[agent.getId()] = not agent.canMove()
 
     if (self.stepCount_ >= self.maxSteps_) or (not self.foodPos_):
       for i in range(self.nAgents_):
@@ -142,7 +142,7 @@ class Game(gym.Env):
       self.agentPos_[agent_i] = pos
       # Add the agent to the grid
       self.__update_agent_view(agent_i)
-    self.agentDones_ = {agent_i:False for agent_i, _ in self.agents_.items()}
+    self.agentDones_ = {agent_i: not agent.canMove() for agent_i, agent in self.agents_.items()}
 
     for food_i in range(self.nFoods_):
       pos = [-1, -1]
@@ -170,7 +170,7 @@ class Game(gym.Env):
       self.agentPos_[agent_i] = pos
       # Add the agent to the grid
       self.__update_agent_view(agent_i)
-    self.agentDones_ = {agent_i:False for agent_i, _ in self.agents_.items()}
+    self.agentDones_ = {agent_i: not agent.canMove() for agent_i, agent in self.agents_.items()}
 
     for food_i in range(self.nFoods_):
       pos = [-1, -1]
