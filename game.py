@@ -221,8 +221,8 @@ class Game(gym.Env):
   def __check_colisions(self, rewards):
     for x in range(self.gridShape_[0]):
         for y in range(self.gridShape_[1]):
-          agents_at_position = self.fullObs_[x][y][self.PRE_IDS['agent']]
-          foods_at_position = self.fullObs_[x][y][self.PRE_IDS['food']]
+          agents_at_position = self.fullObs_[x][y][PRE_IDS['agent']]
+          foods_at_position = self.fullObs_[x][y][PRE_IDS['food']]
           
           if len(foods_at_position) > 0:
             if len(agents_at_position) == 1:
@@ -231,8 +231,8 @@ class Game(gym.Env):
               self.fullObs_[x][y][PRE_IDS['food']].remove(foods_at_position[0])
               
             elif len(agents_at_position) > 1:
-              total_strength = sum([self.agents_[agent_id].strength() for agent_id in agents_at_position])
-              reward_probabilities = [self.agents_[agent_id].strength() / total_strength for agent_id in agents_at_position]
+              total_strength = sum([self.agents_[agent_id].getStrength() for agent_id in agents_at_position])
+              reward_probabilities = [self.agents_[agent_id].getStrength() / total_strength for agent_id in agents_at_position]
               chosen_agent_id = random.choices(agents_at_position, weights=reward_probabilities)[0]
               rewards[chosen_agent_id] += self.foodCaptureReward_
               self.foodPos_.pop(foods_at_position[0])
