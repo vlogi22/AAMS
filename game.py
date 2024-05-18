@@ -20,7 +20,7 @@ class Game(gym.Env):
   metadata = {'render.modes': ['human', 'rgb_array']}
 
   def __init__(self, gridShape=(10, 10), nFoods=1,
-              penalty=-2, stepCost=-1, foodCaptureReward=5, maxSteps=100):
+              penalty=-2, foodCaptureReward=5, maxSteps=100):
     
     # Game Args
     self.gridShape_ = gridShape
@@ -31,7 +31,6 @@ class Game(gym.Env):
 
     # Scores
     self.penalty_ = penalty
-    self.stepCost_ = stepCost
     self.foodCaptureReward_ = foodCaptureReward
 
     # Game objects
@@ -83,11 +82,11 @@ class Game(gym.Env):
     reward = abs(self.agentPos_[agent.getId()][0] - pos[0]) + abs(self.agentPos_[agent.getId()][1] - pos[1])
     self.agentPos_[agent.getId()] = pos
     self.__update_agent_view(agent.getId())
-    return -reward/4
+    return -reward / 4
   
   def step(self, agents_action: dict):
     self.stepCount_ += 1
-    rewards = [self.stepCost_ for _ in range(self.nAgents_)]
+    rewards = np.zeros(self.nAgents_)
 
     for agent_i, action in agents_action.items():
       if not (self.agentDones_[agent_i]):
@@ -237,7 +236,7 @@ class Game(gym.Env):
               rewards[chosen_agent_id] += self.foodCaptureReward_
               self.foodPos_.pop(foods_at_position[0])
               self.fullObs_[x][y][PRE_IDS['food']].remove(foods_at_position[0])
-    
+
     return rewards
               
     

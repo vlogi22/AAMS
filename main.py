@@ -14,6 +14,8 @@ import mapGen
 EPSILON_DECAY = 0.9998
 MIN_EPSILON = 0.005
 
+SPAWN_PENALTY = -15
+
 def train_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int, pat: list) -> tuple:
   epsilon = 1
   ep_rewards = []
@@ -92,9 +94,9 @@ def run_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int, p
 
     step = 0
     terminals = [False for _ in range(len(agents))]
-    ep_reward = np.zeros(len(agents))
+    ep_reward = np.array([SPAWN_PENALTY for _ in range(len(agents))], dtype=np.float32)
     obs, info = env.reset(n_foods, pat[np.random.randint(0, len(pat))])
-    env.render()
+    #env.render()
 
     for observation, agent in zip(obs, agents):
       agent.see(observation, info)
@@ -112,7 +114,7 @@ def run_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int, p
       moveActions = {agent.getId(): agent.moveAction() for agent in agents}
       newObs, info, rewards, terminals = env.step(moveActions)
 
-      env.render()
+      #env.render()
       #time.sleep(0.1)
       ep_reward += rewards
       obs = newObs
