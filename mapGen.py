@@ -86,4 +86,13 @@ def map6(n, m) -> list:
 
   return map
 
+# 7 - Map with a circle in the center, centered food source
+def map7(n: int, m: int) -> list:
+    map = createMap(n, m)
+    center_row, center_col = n // 2, m // 2
+    radius = min(n, m) // 2
+    initial_prob = 0.9
+    decay = 0.8
+    map = createMapPatternCircle(center_row, center_col, radius, initial_prob, decay, map)
+    return map
 
