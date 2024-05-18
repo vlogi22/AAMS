@@ -110,7 +110,7 @@ class DQN():
     return loss.item()
   
   def save(self, file_name='model.pth'):
-    model_folder_path = './model'
+    model_folder_path = 'model'
     if not os.path.exists(model_folder_path):
         os.makedirs(model_folder_path)
     
@@ -121,7 +121,7 @@ class DQN():
                 }, file_name)
 
   def load(self, file_name='model.pth'):
-    model_folder_path = './model'
+    model_folder_path = 'model'
     if not os.path.exists(model_folder_path):
       print(" > No model found, initializing a random one")
       return

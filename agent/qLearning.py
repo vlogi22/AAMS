@@ -65,14 +65,14 @@ class QLearning():
     return action
   
   def save(self, file_name='QLmodel'):
-    model_folder_path = 'models/'
+    model_folder_path = 'model'
     file_name = os.path.join(model_folder_path, file_name)
-
+    
     with open(file_name, 'wb') as f:
       pickle.dump(self.qTable_, f)
 
   def load(self, file_name='QLmodel'):
-    model_folder_path = 'models/'
+    model_folder_path = 'model'
     file_name = os.path.join(model_folder_path, file_name)
 
     with open(file_name, 'rb') as f:
