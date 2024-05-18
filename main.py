@@ -22,12 +22,11 @@ def train_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int,
 
   for ep in range(1, n_eps+1):
     if (not (ep % 100)) and ep: # Update every 100 ep
+      print("ep: ", ep, "epsilon", epsilon)
       for agent in agents:
         agent.updateGenetic(np.mean(np.array(ep_rewards[-100:])))
       ep_strengths.append(np.mean(np.array([agent.getStrength() for agent in agents], dtype=np.float32)))
 
-    if not (ep % 1000):
-      print("ep: ", ep, "epsilon", epsilon)
     step = 0
     terminals = [False for _ in range(len(agents))]
     ep_reward = np.zeros(len(agents))
@@ -114,12 +113,12 @@ def run_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int, p
       newObs, info, rewards, terminals = env.step(moveActions)
 
       env.render()
-      time.sleep(0.1)
+      #time.sleep(0.1)
       ep_reward += rewards
       obs = newObs
       
     # Append episode reward to a list and log stats (every given number of episodes)
-    ep_rewards.append(ep_reward)
+    ep_rewards.append(np.mean(ep_reward))
     print("ep_reward: ", ep_reward, " ep: ", ep)
 
   env.close()
@@ -151,7 +150,7 @@ if __name__ == '__main__':
 
   # 2 - Setup agent
   factory = GameAgentFactory(seed=0)
-  agents = [factory.createGreedyDqnAgent(strength=0.5, maxEnergy=20, 
+  agents = [factory.createGreedyDqnAgent(maxEnergy=20, 
                                          nSpawns=30*30, nGenetics=2, device=DEVICE) 
             for _ in range(0, opt.agents)]
   
