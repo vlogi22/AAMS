@@ -8,19 +8,24 @@ from game import Game
 import time
 
 from agent.gameAgentFactory import GameAgentFactory
-from agent.basicAgent import BasicAgent
-from agent.greedyDqnAgent import GreedyDQNAgent
+from agent.dqnAgent import DQNAgent
 import mapGen
 
 EPSILON_DECAY = 0.9998
 MIN_EPSILON = 0.005
 
-def train_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: int, pat: list) -> np.ndarray:
+def train_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int, pat: list) -> tuple:
   epsilon = 1
   ep_rewards = []
+  ep_strengths = [np.mean(np.array([agent.getStrength() for agent in agents], dtype=np.float32))]
   gridShape = env.getGridShape()
 
-  for ep in range(n_eps):
+  for ep in range(1, n_eps+1):
+    if (not (ep % 100)) and ep: # Update every 100 ep
+      for agent in agents:
+        agent.updateGenetic(np.mean(np.array(ep_rewards[-100:])))
+      ep_strengths.append(np.mean(np.array([agent.getStrength() for agent in agents], dtype=np.float32)))
+
     if not (ep % 1000):
       print("ep: ", ep, "epsilon", epsilon)
     step = 0
@@ -42,7 +47,7 @@ def train_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: in
     
     ep_reward += np.array([env.spawn(agent, pos) for agent, pos in zip(agents, spawnPos)])
 
-    newObs = [env.get_agent_obs(agent.id()) for agent in agents]
+    newObs = [env.get_agent_obs(agent.getId()) for agent in agents]
 
     for agent in agents:
       agent.resetEnergy()
@@ -50,7 +55,7 @@ def train_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: in
     while not all(terminals):
       step += 1
 
-      moveActions = {agent.id(): agent.moveAction() for agent in agents}
+      moveActions = {agent.getId(): agent.moveAction() for agent in agents}
       _, info, rewards, terminals = env.step(moveActions)
       #env.render()
       #time.sleep(0.1)
@@ -59,7 +64,7 @@ def train_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: in
 
     # Every step we update replay memory and train main network
     for ob, agent, action, reward, newOb in zip(obs, agents, spawnActions, ep_reward, newObs):
-      agent.updateReplay(ob, action, reward, newOb, all(terminals))
+      agent.updateSpawnReplay(ob, action, reward, newOb, all(terminals))
       agent.train(all(terminals), step)
       
     # Append episode reward to a list and log stats (every given number of episodes)
@@ -72,14 +77,20 @@ def train_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: in
 
   env.close()
 
-  return [rewards.tolist() for rewards in ep_rewards]
+  #return ([rewards.tolist() for rewards in ep_rewards], ep_strengths)
+  return (ep_rewards, ep_strengths)
 
-def run_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: int, pat: list) -> np.ndarray:
-  results = np.zeros(n_eps)
+def run_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int, pat: list) -> np.ndarray:
   ep_rewards = []
+  ep_strengths = [np.mean(np.array([agent.getStrength() for agent in agents], dtype=np.float32))]
   gridShape = env.getGridShape()
 
-  for ep in range(n_eps):
+  for ep in range(1, n_eps+1):
+    if (not (ep % 100)) and ep: # Update every 100 ep
+      for agent in agents:
+        agent.updateGenetic(np.mean(np.array(ep_rewards[-100:])))
+      ep_strengths.append(np.mean(np.array([agent.getStrength() for agent in agents], dtype=np.float32)))
+
     step = 0
     terminals = [False for _ in range(len(agents))]
     ep_reward = np.zeros(len(agents))
@@ -99,7 +110,7 @@ def run_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: int,
     while not all(terminals):
       step += 1
 
-      moveActions = {agent.id(): agent.moveAction() for agent in agents}
+      moveActions = {agent.getId(): agent.moveAction() for agent in agents}
       newObs, info, rewards, terminals = env.step(moveActions)
 
       env.render()
@@ -113,7 +124,7 @@ def run_multi_agent(env: Env, agents: Sequence[BasicAgent], n_foods, n_eps: int,
 
   env.close()
 
-  return ep_rewards
+  return (ep_rewards, ep_strengths)
 
 if __name__ == '__main__':
 
@@ -135,19 +146,22 @@ if __name__ == '__main__':
   env = Game(
     gridShape=(30, 30), 
     nFoods=opt.foods,
-    foodCaptureReward=4, maxSteps=10
+    foodCaptureReward=5, maxSteps=10
   )
 
   # 2 - Setup agent
-  factory = GameAgentFactory()
-  agents = [factory.createGreedyDqnAgent(maxEnergy=20, nSpawns=30*30, device=DEVICE) for _ in range(0, opt.agents)]
+  factory = GameAgentFactory(seed=0)
+  agents = [factory.createGreedyDqnAgent(strength=0.5, maxEnergy=20, 
+                                         nSpawns=30*30, nGenetics=2, device=DEVICE) 
+            for _ in range(0, opt.agents)]
+  
   for agent in agents:
-    env.addAgent(agent.id(), agent)
+    env.addAgent(agent.getId(), agent)
 
   # 3 - Setup agent
   if opt.load:
     for agent in agents:
-      agent.load(f"{agent.id()}")
+      agent.load(prefix=f"{agent.getId()}")
   
   pat = [mapGen.map2(30, 30)]
 
@@ -155,16 +169,23 @@ if __name__ == '__main__':
   results = {}
   if opt.train:
     print("training!!!")
-    result = train_multi_agent(env, agents, opt.foods, opt.episodes, pat)
+    results['rewards'], results['strength'] = train_multi_agent(env, agents, opt.foods, opt.episodes, pat)
   else:
     print("testing!!!")
-    result = run_multi_agent(env, agents, opt.foods, opt.episodes, pat)
-  results['agent1'] = result
+    results['rewards'], results['strength'] = run_multi_agent(env, agents, opt.foods, opt.episodes, pat)
 
   # 5 - Compare results
-  plot(opt.episodes, result, ylim=(-20, 20), image=opt.image, colors=["orange"])
+  plot(xLen=opt.episodes, x=results['rewards'], 
+       xLabel = 'Episodes', yLabel = 'Scores',
+       ylim=(-20, 15), s=0.1, 
+       image=f"{opt.image}rewards", colors=["orange"])
+  
+  plot(xLen=opt.episodes//100+1, x=results['strength'], 
+       xLabel = 'Updates', yLabel = 'Strength',
+       ylim=(-2, 2), s=2, 
+       image=f"{opt.image}strength", colors=["orange"])
 
   # 6 - Save model
   if opt.save:
     for agent in agents:
-      agent.save(f"{agent.id()}")
+      agent.save(prefix=f"{agent.getId()}")

@@ -10,8 +10,16 @@ DOWN, LEFT, UP, RIGHT, STAY = range(MOVES)
 
 class GreedyDQNAgent(DQNAgent):
 
-  def __init__(self, agentId: int, strength: float, maxEnergy: float, nSpawns: int, device: str = "cpu"):
-    super(GreedyDQNAgent, self).__init__(agentId, nSpawns, f"Greedy DQN Agent", strength, maxEnergy, device)
+  def __init__(self, agentId: int, strength: float, maxEnergy: float, nSpawns: int, nGenetics: int, device: str = "cpu"):
+    super(GreedyDQNAgent, self).__init__(
+      agentId=agentId, 
+      nSpawns=nSpawns, 
+      nGenetics=nGenetics, 
+      name=f"Greedy DQN Agent", 
+      strength=strength, 
+      maxEnergy=maxEnergy, 
+      device=device
+    )
     self.nMoves_ = MOVES
     self.moveCost_ = strength*4
 
