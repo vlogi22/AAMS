@@ -47,4 +47,4 @@ class DQNAgent(BasicAgent):
   def load(self, prefix='model'):
     print("agent", self.agentId_, " loading ", prefix)
     self.spawnBrain_.load(f"{prefix}Spawn")
-    self.geneticBrain_.save(f"{prefix}Genetic")
+    self.geneticBrain_.load(f"{prefix}Genetic")
