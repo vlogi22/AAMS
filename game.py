@@ -20,7 +20,7 @@ class Game(gym.Env):
   metadata = {'render.modes': ['human', 'rgb_array']}
 
   def __init__(self, gridShape=(10, 10), nFoods=1,
-              penalty=-2, foodCaptureReward=5, maxSteps=100):
+              penalty=-2, foodCaptureReward=5, maxSteps=100, seed=0):
     
     # Game Args
     self.gridShape_ = gridShape
@@ -44,7 +44,7 @@ class Game(gym.Env):
     self.fullObs_ = [[{PRE_IDS['agent']: [], PRE_IDS['food']: []} for _ in range(self.gridShape_[1])] for _ in range(self.gridShape_[0])]
     self.viewer_ = None
 
-    self.seed()
+    self.seed(seed)
 
   def getGridShape(self):
     return self.gridShape_
@@ -85,20 +85,17 @@ class Game(gym.Env):
     return -reward / 4
   
   def step(self, agents_action: dict):
-    self.stepCount_ += 1
     rewards = np.zeros(self.nAgents_)
 
     for agent_i, action in agents_action.items():
       if not (self.agentDones_[agent_i]):
         # After a move, it will return a additional reward value if something happen
         rewards[agent_i] += self.__update_agent_pos(agent_i, action)
-        
-    rewards = self.__check_colisions(rewards)
 
     for agent_i, agent in self.agents_.items():
       self.agentDones_[agent.getId()] = not agent.canMove()
 
-    if (self.stepCount_ >= self.maxSteps_) or (not self.foodPos_):
+    if not self.foodPos_:
       for i in range(self.nAgents_):
         self.agentDones_[i] = True
 
@@ -217,7 +214,9 @@ class Game(gym.Env):
 
     return reward
   
-  def __check_colisions(self, rewards):
+  def doColisions(self):
+    rewards = np.zeros(self.nAgents_)
+
     for x in range(self.gridShape_[0]):
         for y in range(self.gridShape_[1]):
           agents_at_position = self.fullObs_[x][y][PRE_IDS['agent']]
@@ -263,15 +262,15 @@ class Game(gym.Env):
   def render(self, mode='human'):
     img = draw_grid(self.gridShape_[0], self.gridShape_[1], cell_size=CELL_SIZE, fill='white')
 
+    for food_i, pos in self.foodPos_.items():
+      draw_circle(img, pos, cell_size=CELL_SIZE, fill=FOOD_COLOR)
+      write_cell_text(img, text=str(food_i), pos=pos, cell_size=CELL_SIZE,
+                      fill='white', margin=0.4)
+      
     for agent_i, pos in self.agentPos_.items():
       agentRGB = self.agents_[agent_i].rgbArray()
       draw_circle(img, pos, cell_size=CELL_SIZE, fill=agentRGB)
       write_cell_text(img, text=str(agent_i), pos=pos, cell_size=CELL_SIZE,
-                      fill='white', margin=0.4)
-
-    for food_i, pos in self.foodPos_.items():
-      draw_circle(img, pos, cell_size=CELL_SIZE, fill=FOOD_COLOR)
-      write_cell_text(img, text=str(food_i), pos=pos, cell_size=CELL_SIZE,
                       fill='white', margin=0.4)
 
     img = np.asarray(img)

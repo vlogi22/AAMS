@@ -4,16 +4,18 @@ from agent.basicAgent import BasicAgent
 from agent.dqn import DQN
 from agent.qLearning import QLearning
 
-INC_STRENGTH, DEC_STRENGTH = range(2)
+INC_STRENGTH, DEC_STRENGTH, INC_SPEED, DEC_SPEED, NO_OP = range(5)
 
 class DQNAgent(BasicAgent):
 
-  def __init__(self, agentId, nSpawns, nGenetics, name, strength: float = 0.5, maxEnergy: float = 20, device: str = "cpu"):
-    super(DQNAgent, self).__init__(agentId=agentId, name=name, strength=strength, maxEnergy=maxEnergy)
+  def __init__(self, agentId, nSpawns, name, 
+               strength: int = 5, speed: int = 5, 
+               maxEnergy: int = 100, device: str = "cpu"):
+    super(DQNAgent, self).__init__(agentId=agentId, name=name, strength=strength, speed=speed, maxEnergy=maxEnergy)
     self.device_ = device
     self.nSpawns_ = nSpawns
     self.spawnBrain_ = DQN(outputLayer = nSpawns, device=device)
-    self.geneticBrain_ = QLearning(nActions=nGenetics, minEpsilon=0.05, alpha=0.2, gamma=0.9)
+    self.geneticBrain_ = QLearning(nActions=5, minEpsilon=0.05, alpha=0.2, gamma=0.9)
 
   def spawnAction(self) -> int:
     #print("Qs ", self.spawnBrain_.getQs(self.obs_/255))
@@ -26,18 +28,22 @@ class DQNAgent(BasicAgent):
     return self.spawnBrain_.train(done, step)
   
   def updateGenetic(self, reward: int) -> int:
-    action = self.geneticBrain_.chooseAction((self.strength_,))
+    action = self.geneticBrain_.chooseAction((self.strength_, self.speed_))
     strength = self.getStrength()
+    speed = self.getSpeed()
     
     if action == INC_STRENGTH:
       self.addStrength(1)
     elif action == DEC_STRENGTH:
       self.addStrength(-1)
-    else:
-      raise Exception('Genetic action does not exists!')
+    elif action == INC_SPEED:
+      self.addSpeed(1)
+    elif action == DEC_SPEED:
+      self.addSpeed(-1)
     
     newStrength = self.getStrength()
-    self.geneticBrain_.learnQ((strength,), action, reward, (newStrength,))
+    newSpeed = self.getSpeed()
+    self.geneticBrain_.learnQ((strength, speed), action, reward, (newStrength, newSpeed))
 
   def save(self, prefix='model'):
     print("agent", self.agentId_, " saving ", prefix)

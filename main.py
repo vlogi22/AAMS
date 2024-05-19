@@ -24,7 +24,7 @@ def train_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int,
 
   for ep in range(1, n_eps+1):
     if (not (ep % 100)) and ep: # Update every 100 ep
-      print("ep: ", ep, "epsilon", epsilon)
+      print(f"ep: {ep}/{n_eps} | epsilon: {epsilon}", end="\r")
       for agent in agents:
         agent.updateGenetic(np.mean(np.array(ep_rewards[-100:])))
       ep_strengths.append(np.mean(np.array([agent.getStrength() for agent in agents], dtype=np.float32)))
@@ -34,7 +34,6 @@ def train_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int,
     ep_reward = np.array([SPAWN_PENALTY for _ in range(len(agents))], dtype=np.float32)
 
     obs, info = env.reset(n_foods, pat[np.random.randint(0, len(pat))])
-    #env.render()
 
     for observation, agent in zip(obs, agents):
       agent.see(observation, info)
@@ -56,10 +55,19 @@ def train_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int,
     while not all(terminals):
       step += 1
 
-      moveActions = {agent.getId(): agent.moveAction() for agent in agents}
-      _, info, rewards, terminals = env.step(moveActions)
-      #env.render()
-      #time.sleep(0.1)
+      agentSteps = [agent.moveSteps() for agent in agents]
+      while not all(x == 0 for x in agentSteps):
+        for i in range(0, len(agentSteps)):
+          if (agentSteps[i]):
+            agentSteps[i] -= 1
+        moveActions = {agent.getId(): agent.moveAction() for agent in agents}
+        _, info, _, terminals = env.step(moveActions)
+
+      for agent in agents:
+        agent.moved() # notify that the agent moved, so it will decrease energy
+
+      rewards = env.doColisions()
+
       # Transform new continous state to new discrete state and count reward
       ep_reward += rewards
 
@@ -96,7 +104,7 @@ def run_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int, p
     terminals = [False for _ in range(len(agents))]
     ep_reward = np.array([SPAWN_PENALTY for _ in range(len(agents))], dtype=np.float32)
     obs, info = env.reset(n_foods, pat[np.random.randint(0, len(pat))])
-    #env.render()
+    env.render()
 
     for observation, agent in zip(obs, agents):
       agent.see(observation, info)
@@ -110,14 +118,26 @@ def run_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int, p
       
     while not all(terminals):
       step += 1
+      
+      agentSteps = [agent.moveSteps() for agent in agents]
+      print(agentSteps)
+      while not all(x == 0 for x in agentSteps):
+        for i in range(0, len(agentSteps)):
+          if (agentSteps[i]):
+            agentSteps[i] -= 1
+        moveActions = {agent.getId(): agent.moveAction() for agent in agents}
+        _, info, _, terminals = env.step(moveActions)
+        env.render()
+        time.sleep(0.01)
 
-      moveActions = {agent.getId(): agent.moveAction() for agent in agents}
-      newObs, info, rewards, terminals = env.step(moveActions)
+      for agent in agents:
+        agent.moved() # notify that the agent moved, so it will decrease energy
 
-      #env.render()
-      #time.sleep(0.1)
+      rewards = env.doColisions()
+      
+      env.render()
+      time.sleep(0.01)
       ep_reward += rewards
-      obs = newObs
       
     # Append episode reward to a list and log stats (every given number of episodes)
     ep_rewards.append(np.mean(ep_reward))
@@ -144,16 +164,17 @@ if __name__ == '__main__':
 
 
   # 1 - Setup environment
+  seed = None if opt.train else 0
+  print("Set seed to: ", seed)
   env = Game(
     gridShape=(30, 30), 
     nFoods=opt.foods,
-    foodCaptureReward=5, maxSteps=10
+    foodCaptureReward=5, maxSteps=10, seed=seed
   )
 
   # 2 - Setup agent
-  factory = GameAgentFactory(seed=0)
-  agents = [factory.createGreedyDqnAgent(maxEnergy=20, 
-                                         nSpawns=30*30, nGenetics=2, device=DEVICE) 
+  factory = GameAgentFactory(seed=seed)
+  agents = [factory.createGreedyDqnAgent(maxEnergy=100, nSpawns=30*30, device=DEVICE) 
             for _ in range(0, opt.agents)]
   
   for agent in agents:
@@ -183,7 +204,7 @@ if __name__ == '__main__':
   
   plot(xLen=opt.episodes//100+1, x=results['strength'], 
        xLabel = 'Updates', yLabel = 'Strength',
-       ylim=(-2, 2), s=2, 
+       ylim=(-0, 2), s=3, 
        image=f"{opt.image}strength", colors=["orange"])
 
   # 6 - Save model

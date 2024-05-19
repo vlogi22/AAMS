@@ -7,10 +7,11 @@ B = 100
 
 class BasicAgent(ABC):
 
-  def __init__(self, agentId: int, name: str, strength: float = 0.5, maxEnergy: float = 20):
+  def __init__(self, agentId: int, name: str, strength: int = 5, speed: int = 5, maxEnergy: int = 100):
     self.agentId_ = agentId
     self.name_ = name
     self.strength_ = strength
+    self.speed_ = speed
     self.maxEnergy_ = maxEnergy
     self.energy_ = maxEnergy
     self.obs_ = None
@@ -30,23 +31,29 @@ class BasicAgent(ABC):
   def setId(self, id: int) -> int:
     self.agentId_ = id
   
-  def getMaxEnergy(self) -> float:
+  def getMaxEnergy(self) -> int:
     return self.maxEnergy_
-  def setMaxEnergy(self, maEnergy: float) -> float:
+  def setMaxEnergy(self, maEnergy: int) -> int:
     self.maxEnergy_ = maEnergy
   
-  def getEnergy(self) -> float:
+  def getEnergy(self) -> int:
     return self.energy_
-  def setEnergy(self, energy) -> float:
+  def setEnergy(self, energy) -> int:
     self.energy_ = energy
   def resetEnergy(self):
     self.energy_ = self.maxEnergy_
 
-  def getStrength(self) -> float:
+  def getStrength(self) -> int:
     return self.strength_
-  def addStrength(self, strength: float) -> float:
-    if (self.strength_ + strength > 1):
+  def addStrength(self, strength: int) -> int:
+    if (self.strength_ + strength >= 1):
       self.strength_ += strength
+
+  def getSpeed(self) -> int:
+    return self.speed_
+  def addSpeed(self, speed: int) -> int:
+    if (self.speed_ + speed >= 1):
+      self.speed_ += speed
     
   def rgbArray(self) -> tuple:
-    return (R + 20*self.strength_, G, B)
+    return (R + 20*self.strength_, G + 20*self.strength_, B)
