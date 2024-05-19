@@ -8,10 +8,10 @@ class GameAgentFactory:
     self.i = 0
     np.random.seed(seed)
   
-  def createGreedyDqnAgent(self, strength: float = None, maxEnergy: float = 20, 
+  def createGreedyDqnAgent(self, strength: float = None, maxEnergy: float = 100, 
                            nSpawns: int = 10*10, nGenetics: int = 2, device: str = "cpu"):
     if (strength == None):
-      strength = np.random.randint(1, 10)/10
+      strength = np.random.randint(1, 11)
     
     agent = GreedyDQNAgent(agentId=self.i, strength=strength, maxEnergy=maxEnergy, 
                            nSpawns=nSpawns, nGenetics=nGenetics, device=device)

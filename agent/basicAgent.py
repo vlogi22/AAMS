@@ -45,8 +45,8 @@ class BasicAgent(ABC):
   def getStrength(self) -> float:
     return self.strength_
   def addStrength(self, strength: float) -> float:
-    if (self.strength_ + strength >= 0.1):
+    if (self.strength_ + strength > 1):
       self.strength_ += strength
     
   def rgbArray(self) -> tuple:
-    return (R + int(255*self.strength_), G, B)
+    return (R + 20*self.strength_, G, B)

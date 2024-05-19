@@ -30,9 +30,9 @@ class DQNAgent(BasicAgent):
     strength = self.getStrength()
     
     if action == INC_STRENGTH:
-      self.addStrength(0.1)
+      self.addStrength(1)
     elif action == DEC_STRENGTH:
-      self.addStrength(-0.1)
+      self.addStrength(-1)
     else:
       raise Exception('Genetic action does not exists!')
     
