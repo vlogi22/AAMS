@@ -20,6 +20,7 @@ def train_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int,
   epsilon = 1
   ep_rewards = []
   ep_strengths = [np.mean(np.array([agent.getStrength() for agent in agents], dtype=np.float32))]
+  ep_speeds = [np.mean(np.array([agent.getSpeed() for agent in agents], dtype=np.float32))]
   gridShape = env.getGridShape()
 
   for ep in range(1, n_eps+1):
@@ -28,6 +29,7 @@ def train_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int,
       for agent in agents:
         agent.updateGenetic(np.mean(np.array(ep_rewards[-100:])))
       ep_strengths.append(np.mean(np.array([agent.getStrength() for agent in agents], dtype=np.float32)))
+      ep_speeds.append(np.mean(np.array([agent.getSpeed() for agent in agents], dtype=np.float32)))
 
     step = 0
     terminals = [False for _ in range(len(agents))]
@@ -87,7 +89,7 @@ def train_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int,
   env.close()
 
   #return ([rewards.tolist() for rewards in ep_rewards], ep_strengths)
-  return (ep_rewards, ep_strengths)
+  return (ep_rewards, ep_strengths, ep_speeds)
 
 def run_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int, pat: list) -> np.ndarray:
   ep_rewards = []
@@ -191,22 +193,31 @@ if __name__ == '__main__':
   results = {}
   if opt.train:
     print("training!!!")
-    results['rewards'], results['strength'] = train_multi_agent(env, agents, opt.foods, opt.episodes, pat)
+    results['rewards'], results['strength'], results['speed'] = train_multi_agent(env, agents, opt.foods, opt.episodes, pat)
   else:
     print("testing!!!")
-    results['rewards'], results['strength'] = run_multi_agent(env, agents, opt.foods, opt.episodes, pat)
+    results['rewards'], results['strength'], results['speed'] = run_multi_agent(env, agents, opt.foods, opt.episodes, pat)
 
   # 5 - Compare results
-  plot(xLen=opt.episodes, x=results['rewards'], 
+  plot(x=results['rewards'], y=np.arange(1, len(results['rewards']) + 1),
        xLabel = 'Episodes', yLabel = 'Scores',
-       ylim=(-20, 15), s=0.1, 
-       image=f"{opt.image}rewards", colors=["orange"])
+       s=0.1, image=f"{opt.image}rewards", colors=["orange"])
   
-  plot(xLen=opt.episodes//100+1, x=results['strength'], 
+  plot(x=results['strength'], y=np.arange(1, len(results['strength']) + 1),
        xLabel = 'Updates', yLabel = 'Strength',
-       ylim=(-0, 2), s=3, 
-       image=f"{opt.image}strength", colors=["orange"])
+       s=3, image=f"{opt.image}strength", colors=["orange"])
+  
+  plot(x=results['speed'], y=np.arange(1, len(results['speed']) + 1),
+       xLabel = 'Updates', yLabel = 'Speed',
+       s=3, image=f"{opt.image}speed", colors=["orange"])
+  
+  final_strengths = [agent.getStrength() for agent in agents]
+  final_speeds = [agent.getSpeed() for agent in agents]
 
+  plot(x=final_speeds, y=final_strengths,
+      xLabel = 'Speed', yLabel = 'Strength',
+      s=3, image=f"{opt.image}Final", colors=["orange"])
+  
   # 6 - Save model
   if opt.save:
     for agent in agents:
