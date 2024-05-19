@@ -21,7 +21,6 @@ class GreedyDQNAgent(DQNAgent):
       device=device
     )
     self.nMoves_ = MOVES
-    self.moveCost_ = strength*4
 
   def moveAction(self) -> int:
     if (not self.canMove()):
@@ -35,13 +34,16 @@ class GreedyDQNAgent(DQNAgent):
 
     closestFoodPos = self.closestFood(agentPosition_pos, foodPositions)
     if closestFoodPos is not None:
-      self.energy_ -= self.moveCost_
+      self.energy_ -= self.moveCost()
       return self.directionToGo(agentPosition_pos, closestFoodPos)
     else:
       return STAY
     
+  def moveCost(self):
+    return 2*self.strength_
+    
   def canMove(self):
-    return self.energy_ >= self.moveCost_
+    return self.energy_ >= self.moveCost()
 
   def directionToGo(self, agentPosition, foodPosition):
     """
