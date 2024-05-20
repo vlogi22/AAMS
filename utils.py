@@ -12,7 +12,7 @@ def plot(x=[], y=[], xLabel='X_Label', yLabel='Y_Label', xlim=None, ylim=None, s
     plt.xlim(xlim)
   if ylim != None:
     plt.ylim(ylim)
-  plt.scatter(y, x, s=s)
+  plt.scatter(x=x, y=y, s=s)
   plt.savefig(image, bbox_inches = 'tight')
 
 

@@ -19,17 +19,19 @@ SPAWN_PENALTY = -15
 def train_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int, pat: list) -> tuple:
   epsilon = 1
   ep_rewards = []
-  ep_strengths = [np.mean(np.array([agent.getStrength() for agent in agents], dtype=np.float32))]
-  ep_speeds = [np.mean(np.array([agent.getSpeed() for agent in agents], dtype=np.float32))]
+  ep_strengths = [[agent.getStrength() for agent in agents]]
+  ep_speeds = [[agent.getSpeed() for agent in agents]]
   gridShape = env.getGridShape()
 
   for ep in range(1, n_eps+1):
     if (not (ep % 100)) and ep: # Update every 100 ep
       print(f"ep: {ep}/{n_eps} | epsilon: {epsilon}", end="\r")
-      for agent in agents:
-        agent.updateGenetic(np.mean(np.array(ep_rewards[-100:])))
-      ep_strengths.append(np.mean(np.array([agent.getStrength() for agent in agents], dtype=np.float32)))
-      ep_speeds.append(np.mean(np.array([agent.getSpeed() for agent in agents], dtype=np.float32)))
+      means = np.mean(np.array(ep_rewards[-100:]), axis=0)
+      for i, agent in enumerate(agents):
+        agent.updateGenetic(means[i])
+        
+      ep_strengths.append([agent.getStrength() for agent in agents])
+      ep_speeds.append([agent.getSpeed() for agent in agents])
 
     step = 0
     terminals = [False for _ in range(len(agents))]
@@ -79,7 +81,7 @@ def train_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int,
       agent.train(all(terminals), step)
       
     # Append episode reward to a list and log stats (every given number of episodes)
-    ep_rewards.append(np.mean(ep_reward))
+    ep_rewards.append(ep_reward)
 
     # Decay epsilon
     if epsilon > MIN_EPSILON:
@@ -88,19 +90,23 @@ def train_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int,
 
   env.close()
 
-  #return ([rewards.tolist() for rewards in ep_rewards], ep_strengths)
-  return (ep_rewards, ep_strengths, ep_speeds)
+  return (np.mean(np.array(ep_rewards), axis=1).tolist(), 
+          np.mean(np.array(ep_strengths), axis=1).tolist(), 
+          np.mean(np.array(ep_speeds), axis=1).tolist())
 
 def run_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int, pat: list) -> np.ndarray:
   ep_rewards = []
-  ep_strengths = [np.mean(np.array([agent.getStrength() for agent in agents], dtype=np.float32))]
+  ep_strengths = [[agent.getStrength() for agent in agents]]
+  ep_speeds = [[agent.getSpeed() for agent in agents]]
   gridShape = env.getGridShape()
 
   for ep in range(1, n_eps+1):
     if (not (ep % 100)) and ep: # Update every 100 ep
-      for agent in agents:
-        agent.updateGenetic(np.mean(np.array(ep_rewards[-100:])))
-      ep_strengths.append(np.mean(np.array([agent.getStrength() for agent in agents], dtype=np.float32)))
+      means = np.mean(np.array(ep_rewards[-100:]), axis=0)
+      for i, agent in enumerate(agents):
+        agent.updateGenetic(means[i])
+      ep_strengths.append([agent.getStrength() for agent in agents])
+      ep_speeds.append([agent.getSpeed() for agent in agents])
 
     step = 0
     terminals = [False for _ in range(len(agents))]
@@ -122,7 +128,6 @@ def run_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int, p
       step += 1
       
       agentSteps = [agent.moveSteps() for agent in agents]
-      print(agentSteps)
       while not all(x == 0 for x in agentSteps):
         for i in range(0, len(agentSteps)):
           if (agentSteps[i]):
@@ -142,12 +147,14 @@ def run_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int, p
       ep_reward += rewards
       
     # Append episode reward to a list and log stats (every given number of episodes)
-    ep_rewards.append(np.mean(ep_reward))
+    ep_rewards.append(ep_reward)
     print("ep_reward: ", ep_reward, " ep: ", ep)
 
   env.close()
 
-  return (ep_rewards, ep_strengths)
+  return (np.mean(np.array(ep_rewards), axis=1).tolist(), 
+          np.mean(np.array(ep_strengths), axis=1).tolist(), 
+          np.mean(np.array(ep_speeds), axis=1).tolist())
 
 if __name__ == '__main__':
 
@@ -199,15 +206,15 @@ if __name__ == '__main__':
     results['rewards'], results['strength'], results['speed'] = run_multi_agent(env, agents, opt.foods, opt.episodes, pat)
 
   # 5 - Compare results
-  plot(x=results['rewards'], y=np.arange(1, len(results['rewards']) + 1),
+  plot(y=results['rewards'], x=np.arange(0, len(results['rewards'])),
        xLabel = 'Episodes', yLabel = 'Scores',
        s=0.1, image=f"{opt.image}rewards", colors=["orange"])
   
-  plot(x=results['strength'], y=np.arange(1, len(results['strength']) + 1),
+  plot(y=results['strength'], x=np.arange(0, len(results['strength'])),
        xLabel = 'Updates', yLabel = 'Strength',
        s=3, image=f"{opt.image}strength", colors=["orange"])
   
-  plot(x=results['speed'], y=np.arange(1, len(results['speed']) + 1),
+  plot(y=results['speed'], x=np.arange(0, len(results['speed'])),
        xLabel = 'Updates', yLabel = 'Speed',
        s=3, image=f"{opt.image}speed", colors=["orange"])
   
