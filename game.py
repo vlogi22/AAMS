@@ -122,7 +122,7 @@ class Game(gym.Env):
     rgb = self.agents_[agentId].rgbArray()
     [row, col] = self.agentPos_[agentId]
     env[0][row][col] = rgb[0]
-    env[1][row][col] = rgb[1] + 80
+    env[1][row][col] = rgb[1] + 120
     env[2][row][col] = rgb[2]
     
     return env

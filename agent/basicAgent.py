@@ -2,7 +2,7 @@ import numpy as np
 from abc import ABC
 
 R = 0
-G = 80
+G = 20
 B = 0
 
 class BasicAgent(ABC):
@@ -56,4 +56,4 @@ class BasicAgent(ABC):
       self.speed_ += speed
     
   def rgbArray(self) -> tuple:
-    return (R + 20*self.strength_, G, B + 20*self.strength_)
+    return (R + 20*self.strength_, G, B + 20*self.speed_)
