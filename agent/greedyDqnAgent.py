@@ -39,7 +39,7 @@ class GreedyDQNAgent(DQNAgent):
       return STAY
     
   def moveCost(self):
-    return self.strength_ + 3*self.speed_
+    return 2*self.strength_ + 3*self.speed_
   
   def moveSteps(self):
     return self.speed_

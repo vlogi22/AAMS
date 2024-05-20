@@ -7,7 +7,7 @@ import pickle
     https://github.com/vmayoral/basic_reinforcement_learning/blob/master/tutorial1/qlearn.py
 '''
 
-INC_STRENGTH, DEC_STRENGTH = range(2)
+INC_STRENGTH, DEC_STRENGTH, INC_SPEED, DEC_SPEED, NO_OP = range(5)
 
 class QLearning():
 
