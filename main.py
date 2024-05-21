@@ -3,7 +3,7 @@ from gym import Env
 from typing import Sequence
 import argparse
 import torch
-from utils import plot
+from utils import plot, plot3d
 from game import Game
 import time
 
@@ -200,30 +200,32 @@ if __name__ == '__main__':
   results = {}
   if opt.train:
     print("training!!!")
-    results['rewards'], results['strength'], results['speed'] = train_multi_agent(env, agents, opt.foods, opt.episodes, pat)
+    results['rewards'], results['mean_strength'], results['mean_speed'] = train_multi_agent(env, agents, opt.foods, opt.episodes, pat)
   else:
     print("testing!!!")
-    results['rewards'], results['strength'], results['speed'] = run_multi_agent(env, agents, opt.foods, opt.episodes, pat)
+    results['rewards'], results['mean_strength'], results['mean_speed'] = run_multi_agent(env, agents, opt.foods, opt.episodes, pat)
 
   # 5 - Compare results
   plot(y=results['rewards'], x=np.arange(0, len(results['rewards'])),
        xLabel = 'Episodes', yLabel = 'Scores',
        s=0.1, image=f"{opt.image}rewards", colors=["orange"])
   
-  plot(y=results['strength'], x=np.arange(0, len(results['strength'])),
+  plot(y=results['mean_strength'], x=np.arange(0, len(results['mean_strength'])),
        xLabel = 'Updates', yLabel = 'Strength',
        s=3, image=f"{opt.image}strength", colors=["orange"])
   
-  plot(y=results['speed'], x=np.arange(0, len(results['speed'])),
+  plot(y=results['mean_speed'], x=np.arange(0, len(results['mean_speed'])),
        xLabel = 'Updates', yLabel = 'Speed',
        s=3, image=f"{opt.image}speed", colors=["orange"])
   
   final_strengths = [agent.getStrength() for agent in agents]
   final_speeds = [agent.getSpeed() for agent in agents]
+  ids = [agent.getId()+1 for agent in agents]
 
-  plot(x=final_speeds, y=final_strengths,
-      xLabel = 'Speed', yLabel = 'Strength',
-      s=3, image=f"{opt.image}Final", colors=["orange"])
+  plot3d(x=final_speeds, y=final_strengths, z=ids,
+      xLabel = 'Speed', yLabel = 'Strength', zLabel = 'AgentId',
+      xlim=(0, 10), ylim=(0, 10),
+      s=3, image=f"{opt.image}Final", colors=["blue"])
   
   # 6 - Save model
   if opt.save:
