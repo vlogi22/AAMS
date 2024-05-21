@@ -45,3 +45,21 @@ def plot3d(x=[], y=[], z=[], xLabel='X_Label', yLabel='Y_Label', zLabel='Z_Label
   ax.view_init(elev=30, azim=30)
   plt.savefig(image)
 
+def plotHeatMap(matrix, xLabel='X_Label', yLabel='Y_Label', 
+                title='Heatmap', cmap='viridis', 
+                colorbar_label='Value', image='matrix_heatmap.png'):
+  plt.clf()
+  fig, ax = plt.subplots()
+  cax = ax.matshow(matrix, cmap=cmap)
+  
+  # Add color bar
+  cbar = fig.colorbar(cax)
+  cbar.set_label(colorbar_label)
+  
+  # Set labels
+  ax.set_xlabel(xLabel)
+  ax.set_ylabel(yLabel)
+  plt.title(title)
+  
+  # Save the figure
+  plt.savefig(image, bbox_inches='tight')

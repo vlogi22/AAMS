@@ -24,75 +24,41 @@ def createMapPatternCircle(row: int, col:int, range:int, iProb:float, decay:floa
 
   return matrix
 
-def map1(n: int, m: int) -> list:
+# 1 - Map with a cluster in the center
+def mapCenter(n: int, m: int) -> list:
   map = createMap(n, m)
-  map = createMapPatternCircle(n//2, m//2, 30, 0.1, 0.9, map)
-  map = createMapPatternCircle(n//2, m//2, 10, 0.5, 0.8, map)
+  map = createMapPatternCircle(n//2, m//2, 100, 0.02, 0.99, map)
+  map = createMapPatternCircle(n//2, m//2, 5, 0.5, 0.95, map)
 
   return map
 
-def map2(n, m) -> list:
+# 2 - Map with a 4 clusters, one in the each corner
+def map4Corner(n, m) -> list:
   map = createMap(n, m)
-  map = createMapPatternCircle(n//2, m//2, 15, 0.02, 0.99, map)
+  map = createMapPatternCircle(n//2, m//2, 100, 0.02, 0.99, map)
   
-  map = createMapPatternCircle(3, 3, 4, 0.5, 0.8, map)
-  map = createMapPatternCircle(3, m-3, 4, 0.5, 0.8, map)
-  map = createMapPatternCircle(n-3, 3, 4, 0.5, 0.8, map)
-  map = createMapPatternCircle(n-3, m-3, 4, 0.5, 0.8, map)
+  map = createMapPatternCircle(4, 4, 4, 0.5, 0.8, map)
+  map = createMapPatternCircle(4, m-5, 4, 0.5, 0.8, map)
+  map = createMapPatternCircle(n-5, 4, 4, 0.5, 0.8, map)
+  map = createMapPatternCircle(n-5, m-5, 4, 0.5, 0.8, map)
 
   return map
 
-def map3(n, m) -> list:
+# 3 - Map with no pattern, all the cells have same prob
+def mapNoPatt(n, m) -> list:
   map = createMap(n, m)
-  map = createMapPatternCircle(10, 10, 100, 0.05, 0.9, map)
-  
-  map = createMapPatternCircle(25, 3, 5, 0.5, 0.8, map)
-  map = createMapPatternCircle(0, 22, 5, 0.5, 0.8, map)
-  map = createMapPatternCircle(46, 0, 5, 0.5, 0.8, map)
-  map = createMapPatternCircle(40, 25, 5, 0.5, 0.8, map)
+
+  map = createMapPatternCircle(n//2, m//2, 100, 0.1, 0.9999, map)
 
   return map
 
-def map4(n, m) -> list:
+# 4 - Map with a 1 clusters in the center and a ring
+def mapClusterRing(n, m) -> list:
   map = createMap(n, m)
-  map = createMapPatternCircle(20, 0, 100, 0.05, 0.9, map)
   
-  map = createMapPatternCircle(5, 5, 5, 0.5, 0.8, map)
-  map = createMapPatternCircle(0, 25, 5, 0.5, 0.8, map)
-  map = createMapPatternCircle(25, 0, 5, 0.5, 0.8, map)
-  map = createMapPatternCircle(40, 35, 5, 0.5, 0.8, map)
+  map = createMapPatternCircle(n//2, m//2, 100, 0, 0, map)
+  map = createMapPatternCircle(n//2, m//2, 18, 0.2, 0.95, map)
+  map = createMapPatternCircle(n//2, m//2, 12, 0, 0, map)
+  map = createMapPatternCircle(n//2, m//2, 3, 0.8, 0.95, map)
 
   return map
-
-def map5(n, m) -> list:
-  map = createMap(n, m)
-  map = createMapPatternCircle(20, 30, 100, 0.05, 0.9, map)
-  
-  map = createMapPatternCircle(3, 44, 5, 0.5, 0.8, map)
-  map = createMapPatternCircle(0, 5, 5, 0.5, 0.8, map)
-  map = createMapPatternCircle(12, 0, 5, 0.5, 0.8, map)
-  map = createMapPatternCircle(2, 35, 5, 0.5, 0.8, map)
-
-  return map
-
-def map6(n, m) -> list:
-  map = createMap(n, m)
-  map = createMapPatternCircle(40, 10, 100, 0.05, 0.9, map)
-  
-  map = createMapPatternCircle(2, 33, 5, 0.5, 0.8, map)
-  map = createMapPatternCircle(42, 33, 5, 0.5, 0.8, map)
-  map = createMapPatternCircle(10, 4, 5, 0.5, 0.8, map)
-  map = createMapPatternCircle(22, 10, 5, 0.5, 0.8, map)
-
-  return map
-
-# 7 - Map with a circle in the center, centered food source
-def map7(n: int, m: int) -> list:
-    map = createMap(n, m)
-    center_row, center_col = n // 2, m // 2
-    radius = min(n, m) // 2
-    initial_prob = 0.9
-    decay = 0.8
-    map = createMapPatternCircle(center_row, center_col, radius, initial_prob, decay, map)
-    return map
-

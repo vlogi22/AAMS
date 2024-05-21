@@ -194,7 +194,7 @@ if __name__ == '__main__':
     for agent in agents:
       agent.load(prefix=f"{agent.getId()}")
   
-  pat = [mapGen.map2(30, 30)]
+  pat = [mapGen.map4Corner(30, 30)]
 
   # 4 - Evaluate agent
   results = {}
@@ -208,15 +208,15 @@ if __name__ == '__main__':
   # 5 - Compare results
   plot(y=results['rewards'], x=np.arange(0, len(results['rewards'])),
        xLabel = 'Episodes', yLabel = 'Scores',
-       s=0.1, image=f"{opt.image}rewards", colors=["orange"])
+       s=0.1, image=f"images/results/{opt.image}Rewards", colors=["orange"])
   
   plot(y=results['mean_strength'], x=np.arange(0, len(results['mean_strength'])),
        xLabel = 'Updates', yLabel = 'Strength',
-       s=3, image=f"{opt.image}strength", colors=["orange"])
+       s=3, image=f"images/results/{opt.image}Strength", colors=["orange"])
   
   plot(y=results['mean_speed'], x=np.arange(0, len(results['mean_speed'])),
        xLabel = 'Updates', yLabel = 'Speed',
-       s=3, image=f"{opt.image}speed", colors=["orange"])
+       s=3, image=f"images/results/{opt.image}Speed", colors=["orange"])
   
   final_strengths = [agent.getStrength() for agent in agents]
   final_speeds = [agent.getSpeed() for agent in agents]
@@ -225,7 +225,7 @@ if __name__ == '__main__':
   plot3d(x=final_speeds, y=final_strengths, z=ids,
       xLabel = 'Speed', yLabel = 'Strength', zLabel = 'AgentId',
       xlim=(0, 10), ylim=(0, 10),
-      s=3, image=f"{opt.image}Final", colors=["blue"])
+      s=3, image=f"images/results/{opt.image}Final", colors=["blue"])
   
   # 6 - Save model
   if opt.save:
