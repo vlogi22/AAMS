@@ -196,14 +196,17 @@ if __name__ == '__main__':
   # 5 - Compare results
   plot(y=results['rewards'], x=np.arange(0, len(results['rewards'])),
        xLabel = 'Episodes', yLabel = 'Scores',
+       ylim=(-15, 15),
        s=0.1, image=f"images/results/{opt.image}Rewards", colors=["orange"])
   
   plot(y=results['mean_strength'], x=np.arange(0, len(results['mean_strength'])),
        xLabel = 'Updates', yLabel = 'Strength',
+       ylim=(0, 10),
        s=3, image=f"images/results/{opt.image}Strength", colors=["orange"])
   
   plot(y=results['mean_speed'], x=np.arange(0, len(results['mean_speed'])),
        xLabel = 'Updates', yLabel = 'Speed',
+       ylim=(0, 10),
        s=3, image=f"images/results/{opt.image}Speed", colors=["orange"])
   
   final_strengths = [agent.getStrength() for agent in agents]
