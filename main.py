@@ -11,24 +11,20 @@ from agent.gameAgentFactory import GameAgentFactory
 from agent.dqnAgent import DQNAgent
 import mapGen
 
-EPSILON_DECAY = 0.99965
-MIN_EPSILON = 0.005
-
 SPAWN_PENALTY = -15
 
 def train_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int, pat: list) -> tuple:
-  epsilon = 1
   ep_rewards = []
   ep_strengths = [[agent.getStrength() for agent in agents]]
   ep_speeds = [[agent.getSpeed() for agent in agents]]
   gridShape = env.getGridShape()
 
   for ep in range(1, n_eps+1):
-    if (not (ep % 10)) and ep: # Update every 00 ep
-      print(f"ep: {ep}/{n_eps} | epsilon: {epsilon}", end="\r")
+    if (not (ep % 10)) and ep: # Update every 10 ep
       means = np.mean(np.array(ep_rewards[-100:]), axis=0)
       for i, agent in enumerate(agents):
-        agent.updateGenetic(means[i])
+        agent.updateGenetic(reward=means[i])
+      print(f"ep: {ep}/{n_eps} | DQN epsilon: {agents[0].epsilonSpawn()} | QL epsilon: {agents[0].epsilonGenetic()}", end="\r")
         
       ep_strengths.append([agent.getStrength() for agent in agents])
       ep_speeds.append([agent.getSpeed() for agent in agents])
@@ -42,12 +38,8 @@ def train_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int,
     for observation, agent in zip(obs, agents):
       agent.see(observation, info)
 
-    if np.random.random() > epsilon:
-      spawnActions = [agent.spawnAction() for agent in agents]
-      spawnPos = [[act//gridShape[0], act%gridShape[1]] for act in spawnActions]
-    else:
-      spawnActions = [np.random.randint(0, gridShape[0]*gridShape[1]) for _ in agents]
-      spawnPos = [[act//gridShape[0], act%gridShape[1]] for act in spawnActions]
+    spawnActions = [agent.spawnAction() for agent in agents]
+    spawnPos = [[act//gridShape[0], act%gridShape[1]] for act in spawnActions]
     
     ep_reward += np.array([env.spawn(agent, pos) for agent, pos in zip(agents, spawnPos)])
 
@@ -83,11 +75,6 @@ def train_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int,
     # Append episode reward to a list and log stats (every given number of episodes)
     ep_rewards.append(ep_reward)
 
-    # Decay epsilon
-    if epsilon > MIN_EPSILON:
-      epsilon *= EPSILON_DECAY
-      epsilon = max(MIN_EPSILON, epsilon)
-
   env.close()
 
   return (np.mean(np.array(ep_rewards), axis=1).tolist(), 
@@ -101,10 +88,11 @@ def run_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int, p
   gridShape = env.getGridShape()
 
   for ep in range(1, n_eps+1):
-    if (not (ep % 100)) and ep: # Update every 100 ep
-      means = np.mean(np.array(ep_rewards[-100:]), axis=0)
+    if (not (ep % 10)) and ep: # Update every 100 ep
       for i, agent in enumerate(agents):
-        agent.updateGenetic(means[i])
+        agent.updateGenetic()
+      print(f"ep: {ep}/{n_eps} | DQN epsilon: {agents[0].epsilonSpawn()} | QL epsilon: {agents[0].epsilonGenetic()}")
+
       ep_strengths.append([agent.getStrength() for agent in agents])
       ep_speeds.append([agent.getSpeed() for agent in agents])
 
@@ -135,7 +123,7 @@ def run_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int, p
         moveActions = {agent.getId(): agent.moveAction() for agent in agents}
         _, info, _, terminals = env.step(moveActions)
         env.render()
-        time.sleep(0.01)
+        #time.sleep(0.01)
 
       for agent in agents:
         agent.moved() # notify that the agent moved, so it will decrease energy
@@ -143,7 +131,7 @@ def run_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int, p
       rewards = env.doColisions()
       
       env.render()
-      time.sleep(0.01)
+      #time.sleep(0.01)
       ep_reward += rewards
       
     # Append episode reward to a list and log stats (every given number of episodes)
@@ -178,12 +166,12 @@ if __name__ == '__main__':
   env = Game(
     gridShape=(30, 30), 
     nFoods=opt.foods,
-    foodCaptureReward=5, maxSteps=10, seed=seed
+    foodCaptureReward=5, seed=seed
   )
 
   # 2 - Setup agent
   factory = GameAgentFactory(seed=seed)
-  agents = [factory.createGreedyDqnAgent(maxEnergy=100, nSpawns=30*30, device=DEVICE) 
+  agents = [factory.createGreedyDqnAgent(maxEnergy=100, nSpawns=30*30, device=DEVICE, train=opt.train) 
             for _ in range(0, opt.agents)]
   
   for agent in agents:

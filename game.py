@@ -20,13 +20,12 @@ class Game(gym.Env):
   metadata = {'render.modes': ['human', 'rgb_array']}
 
   def __init__(self, gridShape=(10, 10), nFoods=1,
-              penalty=-2, foodCaptureReward=5, maxSteps=100, seed=0):
+              penalty=-2, foodCaptureReward=5, seed=0):
     
     # Game Args
     self.gridShape_ = gridShape
     self.nAgents_ = 0
     self.nFoods_ = nFoods
-    self.maxSteps_ = maxSteps
     self.stepCount_ = 0
 
     # Scores
