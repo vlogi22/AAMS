@@ -46,13 +46,13 @@ class BasicAgent(ABC):
   def getStrength(self) -> int:
     return self.strength_
   def addStrength(self, strength: int) -> int:
-    if (self.strength_ + strength >= 1):
+    if (1 <= (self.strength_ + strength) <= 10):
       self.strength_ += strength
 
   def getSpeed(self) -> int:
     return self.speed_
   def addSpeed(self, speed: int) -> int:
-    if (self.speed_ + speed >= 1):
+    if (1 <= (self.speed_ + speed) <= 10):
       self.speed_ += speed
     
   def rgbArray(self) -> tuple:

@@ -45,6 +45,8 @@ class DQNAgent(BasicAgent):
     newSpeed = self.getSpeed()
     self.geneticBrain_.learnQ((strength, speed), action, reward, (newStrength, newSpeed))
 
+    return action
+
   def save(self, prefix='model'):
     print("agent", self.agentId_, " saving ", prefix)
     self.spawnBrain_.save(f"{prefix}Spawn")

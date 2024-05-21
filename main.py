@@ -11,7 +11,7 @@ from agent.gameAgentFactory import GameAgentFactory
 from agent.dqnAgent import DQNAgent
 import mapGen
 
-EPSILON_DECAY = 0.9998
+EPSILON_DECAY = 0.99965
 MIN_EPSILON = 0.005
 
 SPAWN_PENALTY = -15
@@ -24,7 +24,7 @@ def train_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int,
   gridShape = env.getGridShape()
 
   for ep in range(1, n_eps+1):
-    if (not (ep % 100)) and ep: # Update every 100 ep
+    if (not (ep % 10)) and ep: # Update every 00 ep
       print(f"ep: {ep}/{n_eps} | epsilon: {epsilon}", end="\r")
       means = np.mean(np.array(ep_rewards[-100:]), axis=0)
       for i, agent in enumerate(agents):
