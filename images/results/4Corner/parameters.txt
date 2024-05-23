@@ -1,0 +1,2 @@
+agents 12 
+foods 72

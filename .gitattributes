@@ -1,0 +1,3 @@
+*.png filter=lfs diff=lfs merge=lfs -text
+model/4Corner/* filter=lfs diff=lfs merge=lfs -text
+model/center/* filter=lfs diff=lfs merge=lfs -text
