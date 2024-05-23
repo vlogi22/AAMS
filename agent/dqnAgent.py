@@ -19,7 +19,7 @@ class DQNAgent(BasicAgent):
     self.spawnBrain_ = DQN(outputLayer = nSpawns, device=device)
     self.epsilonSpawn_ = epsilon
     self.epsilonDecaySpawn_ = 0.99965
-    self.minEpsilonSpawn_ = 0.05
+    self.minEpsilonSpawn_ = 0.005
 
     self.geneticBrain_ = QLearning(nActions=5, alpha=0.2, gamma=0.8)
     self.epsilonGenetic_ = epsilon
