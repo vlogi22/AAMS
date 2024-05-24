@@ -12,6 +12,7 @@ from agent.dqnAgent import DQNAgent
 import mapGen
 
 SPAWN_PENALTY = -15
+STAY = 4
 
 def train_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int, pat: list) -> tuple:
   ep_rewards = []
@@ -53,10 +54,15 @@ def train_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int,
 
       agentSteps = [agent.moveSteps() for agent in agents]
       while not all(x == 0 for x in agentSteps):
-        for i in range(0, len(agentSteps)):
-          if (agentSteps[i]):
-            agentSteps[i] -= 1
         moveActions = {agent.getId(): agent.moveAction() for agent in agents}
+
+        for i in range(0, len(agentSteps)):
+          agentSteps[i] -= 1
+
+        for agent in agents:
+          if (agentSteps[agent.getId()] < 0):
+            moveActions[agent.getId()] = STAY
+
         _, info, _, terminals = env.step(moveActions)
 
       for agent in agents:
@@ -103,7 +109,7 @@ def run_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int, p
     ep_reward = np.array([SPAWN_PENALTY for _ in range(len(agents))], dtype=np.float32)
     obs, info = env.reset(n_foods, pat[np.random.randint(0, len(pat))])
     
-    if (ep > 4000): 
+    if (ep > 100): 
       env.render()
       time.sleep(0.5)
 
@@ -113,7 +119,7 @@ def run_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int, p
     spawnPos = [[act//gridShape[0], act%gridShape[1]] for act in spawnActions]
 
     ep_reward += np.array([env.spawn(agent, pos) for agent, pos in zip(agents, spawnPos)])
-    if (ep > 4000): 
+    if (ep > 100): 
       env.render() 
       time.sleep(0.2)
 
@@ -124,24 +130,32 @@ def run_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int, p
       step += 1
       
       agentSteps = [agent.moveSteps() for agent in agents]
-      while not all(x == 0 for x in agentSteps):
-        for i in range(0, len(agentSteps)):
-          if (agentSteps[i]):
-            agentSteps[i] -= 1
+      if (ep > 100): 
+        print("agentSteps: ", [agent.moveSteps() for agent in agents])
+
+      while not all(x <= 0 for x in agentSteps):
         moveActions = {agent.getId(): agent.moveAction() for agent in agents}
+
+        for i in range(0, len(agentSteps)):
+          agentSteps[i] -= 1
+
+        for agent in agents:
+          if (agentSteps[agent.getId()] < 0):
+            moveActions[agent.getId()] = STAY
+        
         _, info, _, terminals = env.step(moveActions)
-        if (ep > 4000): 
+        if (ep > 100): 
           env.render()
-          time.sleep(0.1)
+          time.sleep(0.01)
 
       for agent in agents:
         agent.moved() # notify that the agent moved, so it will decrease energy
 
       rewards = env.doColisions()
       
-      if (ep > 4000): 
+      if (ep > 100): 
         env.render()
-        time.sleep(0.1)
+        time.sleep(0.01)
       ep_reward += rewards
       
     # Append episode reward to a list and log stats (every given number of episodes)
@@ -192,7 +206,7 @@ if __name__ == '__main__':
     for agent in agents:
       agent.load(prefix=f"{agent.getId()}")
   
-  pat = [mapGen.mapNoPatt(30, 30)]
+  pat = [mapGen.mapCenter(30, 30)]
 
   # 4 - Evaluate agent
   results = {}
