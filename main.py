@@ -124,7 +124,6 @@ def run_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int, p
       step += 1
       
       agentSteps = [agent.moveSteps() for agent in agents]
-      print(agentSteps)
       while not all(x == 0 for x in agentSteps):
         for i in range(0, len(agentSteps)):
           if (agentSteps[i]):
@@ -193,7 +192,7 @@ if __name__ == '__main__':
     for agent in agents:
       agent.load(prefix=f"{agent.getId()}")
   
-  pat = [mapGen.map4Corner(30, 30)]
+  pat = [mapGen.mapNoPatt(30, 30)]
 
   # 4 - Evaluate agent
   results = {}
