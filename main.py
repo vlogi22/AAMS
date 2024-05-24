@@ -21,7 +21,7 @@ def train_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int,
 
   for ep in range(1, n_eps+1):
     if (not (ep % 10)) and ep: # Update every 10 ep
-      means = np.mean(np.array(ep_rewards[-100:]), axis=0)
+      means = np.mean(np.array(ep_rewards[-10:]), axis=0)
       for i, agent in enumerate(agents):
         agent.updateGenetic(reward=means[i])
       print(f"ep: {ep}/{n_eps} | DQN epsilon: {agents[0].epsilonSpawn()} | QL epsilon: {agents[0].epsilonGenetic()}", end="\r")
@@ -88,19 +88,24 @@ def run_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int, p
   gridShape = env.getGridShape()
 
   for ep in range(1, n_eps+1):
-    if (not (ep % 10)) and ep: # Update every 100 ep
+    if (not (ep % 10)) and ep: # Update every 10 ep
+      means = np.mean(np.array(ep_rewards[-10:]), axis=0)
       for i, agent in enumerate(agents):
-        agent.updateGenetic()
-      print(f"ep: {ep}/{n_eps} | DQN epsilon: {agents[0].epsilonSpawn()} | QL epsilon: {agents[0].epsilonGenetic()}")
-
+        agent.updateGenetic(reward=means[i])
+      print(f"ep: {ep}/{n_eps} | DQN epsilon: {agents[0].epsilonSpawn()} | QL epsilon: {agents[0].epsilonGenetic()}", end="\r")
+        
       ep_strengths.append([agent.getStrength() for agent in agents])
       ep_speeds.append([agent.getSpeed() for agent in agents])
+
 
     step = 0
     terminals = [False for _ in range(len(agents))]
     ep_reward = np.array([SPAWN_PENALTY for _ in range(len(agents))], dtype=np.float32)
     obs, info = env.reset(n_foods, pat[np.random.randint(0, len(pat))])
-    env.render()
+    
+    if (ep > 4000): 
+      env.render()
+      time.sleep(0.5)
 
     for observation, agent in zip(obs, agents):
       agent.see(observation, info)
@@ -108,6 +113,9 @@ def run_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int, p
     spawnPos = [[act//gridShape[0], act%gridShape[1]] for act in spawnActions]
 
     ep_reward += np.array([env.spawn(agent, pos) for agent, pos in zip(agents, spawnPos)])
+    if (ep > 4000): 
+      env.render() 
+      time.sleep(0.2)
 
     for agent in agents:
       agent.resetEnergy()
@@ -116,27 +124,30 @@ def run_multi_agent(env: Env, agents: Sequence[DQNAgent], n_foods, n_eps: int, p
       step += 1
       
       agentSteps = [agent.moveSteps() for agent in agents]
+      print(agentSteps)
       while not all(x == 0 for x in agentSteps):
         for i in range(0, len(agentSteps)):
           if (agentSteps[i]):
             agentSteps[i] -= 1
         moveActions = {agent.getId(): agent.moveAction() for agent in agents}
         _, info, _, terminals = env.step(moveActions)
-        env.render()
-        #time.sleep(0.01)
+        if (ep > 4000): 
+          env.render()
+          time.sleep(0.1)
 
       for agent in agents:
         agent.moved() # notify that the agent moved, so it will decrease energy
 
       rewards = env.doColisions()
       
-      env.render()
-      #time.sleep(0.01)
+      if (ep > 4000): 
+        env.render()
+        time.sleep(0.1)
       ep_reward += rewards
       
     # Append episode reward to a list and log stats (every given number of episodes)
     ep_rewards.append(ep_reward)
-    print("ep_reward: ", ep_reward, " ep: ", ep)
+    #print("ep_reward: ", ep_reward, " ep: ", ep)
 
   env.close()
 
